@@ -1,12 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import questions from './data/questions.json'
-import { fetchRecommendations, fetchStartingPool } from './api/tmdb.js'
+import { answerQuestion, startNewGame } from './gameFlow.js'
 import {
-  applyAnswer,
   canKeepGoing,
   excludeMovie,
   keepGoing,
-  newGame,
   nextQuestion,
   shouldGuess,
 } from './engine/engine.js'
@@ -31,29 +29,39 @@ function App() {
     setPhase(question ? 'question' : 'result')
   }
 
+  // Goes up by one every time you leave a game, so anything still loading
+  // from the old game is ignored when it finishes
+  const session = useRef(0)
+
+  function goHome() {
+    session.current++
+    setPhase('start')
+    setGame(null)
+    setCurrent(null)
+    setBusy(false)
+    setError('')
+  }
+
   async function startGame() {
+    const thisSession = ++session.current
     setPhase('loading')
     setError('')
     try {
-      const movies = await fetchStartingPool()
-      advance(newGame(movies))
+      const newGame = await startNewGame()
+      if (session.current === thisSession) advance(newGame)
     } catch (err) {
+      if (session.current !== thisSession) return
       setError(err.message)
       setPhase('error')
     }
   }
 
   async function handleAnswer(value) {
+    const thisSession = session.current
     setBusy(true)
-    let recommendations = []
-    if (current.question.fill === 'movie' && value !== 0) {
-      try {
-        recommendations = await fetchRecommendations(current.ref.id)
-      } catch {
-        // Not critical: keep playing without the recommendations
-      }
-    }
-    advance(applyAnswer(game, current, value, recommendations))
+    const nextGame = await answerQuestion(game, current, value)
+    if (session.current !== thisSession) return
+    advance(nextGame)
     setBusy(false)
   }
 
@@ -76,7 +84,11 @@ function App() {
   return (
     <div className="app">
       <main className="game">
-        <h1 className="title">ReelMind</h1>
+        <h1 className="title">
+          <button type="button" className="title-button" onClick={goHome} title="Back to start">
+            ReelMind
+          </button>
+        </h1>
 
         {phase === 'start' && (
           <>

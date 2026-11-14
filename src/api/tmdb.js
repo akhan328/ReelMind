@@ -32,9 +32,16 @@ const POOL_MIX = [
   },
 ]
 
+const MAX_PARALLEL = 10 // TMDB allows roughly 50 requests a second
+const DETAILS_CACHE_KEY = 'reelmind:details:v1'
+const DETAILS_CACHE_DAYS = 7
+const DETAILS_CACHE_MAX = 3000
+
 export function posterUrl(path, size = 'w342') {
   return path ? `${IMAGE_BASE}${size}${path}` : null
 }
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function tmdbGet(path, params = {}) {
   if (!TOKEN) {
@@ -48,18 +55,53 @@ async function tmdbGet(path, params = {}) {
     url.searchParams.set(key, String(value))
   }
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${TOKEN}`, accept: 'application/json' },
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${TOKEN}`, accept: 'application/json' },
+    })
+    // Too many requests: wait a moment and try again
+    if (response.status === 429 && attempt < 3) {
+      await sleep((Number(response.headers.get('retry-after')) || 1) * 1000)
+      continue
+    }
+    if (response.status === 401) {
+      throw new Error(
+        'TMDB rejected the token. Make sure VITE_TMDB_TOKEN in .env.local is the long API Read Access Token.',
+      )
+    }
+    if (!response.ok) {
+      throw new Error(`TMDB request failed (${response.status}): ${path}`)
+    }
+    return response.json()
+  }
+}
+
+// Runs at most MAX_PARALLEL tasks at once. `urgent` tasks skip the line.
+let running = 0
+const waiting = [] // [{ key, run }]
+function limited(task, { urgent = false, key } = {}) {
+  return new Promise((resolve, reject) => {
+    const run = async () => {
+      running++
+      try {
+        resolve(await task())
+      } catch (err) {
+        reject(err)
+      } finally {
+        running--
+        waiting.shift()?.run()
+      }
+    }
+    if (running < MAX_PARALLEL) run()
+    else if (urgent) waiting.unshift({ key, run })
+    else waiting.push({ key, run })
   })
-  if (response.status === 401) {
-    throw new Error(
-      'TMDB rejected the token. Make sure VITE_TMDB_TOKEN in .env.local is the long API Read Access Token.',
-    )
-  }
-  if (!response.ok) {
-    throw new Error(`TMDB request failed (${response.status}): ${path}`)
-  }
-  return response.json()
+}
+
+// Move an already-waiting task to the front of the line
+function hurry(key) {
+  const index = waiting.findIndex((entry) => entry.key === key)
+  if (index > 0) waiting.unshift(...waiting.splice(index, 1))
 }
 
 function discover(params, page) {
@@ -107,6 +149,16 @@ export async function fetchStartingPool() {
   return uniqueUsable(responses.flatMap((response) => response.results))
 }
 
+// Extra movies matching a narrower search, e.g. { with_keywords: '12377' } for zombies.
+// Sorted by vote count so the best-known matches come first.
+export async function fetchMoreMovies(params, pages = 2) {
+  const requests = Array.from({ length: pages }, (_, i) =>
+    discover({ sort_by: 'vote_count.desc', 'vote_count.gte': 100, ...params }, i + 1),
+  )
+  const responses = await Promise.all(requests)
+  return uniqueUsable(responses.flatMap((response) => response.results))
+}
+
 // Movies TMDB recommends for people who liked `movieId`
 export async function fetchRecommendations(movieId) {
   const data = await tmdbGet(`/movie/${movieId}/recommendations`, {
@@ -114,4 +166,91 @@ export async function fetchRecommendations(movieId) {
     page: 1,
   })
   return uniqueUsable(data.results).filter((movie) => movie.vote_count >= 300)
+}
+
+// ---------------------------------------------------------------------------
+// Movie details: keywords, runtime, US age rating, franchise, budget.
+// Saved in the browser for a few days so repeat games need fewer calls.
+
+let savedDetails = null // { [movieId]: { savedAt, details } }
+let saveTimer = null
+
+function loadSavedDetails() {
+  if (savedDetails) return savedDetails
+  savedDetails = {}
+  try {
+    const raw = globalThis.localStorage?.getItem(DETAILS_CACHE_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    const oldest = Date.now() - DETAILS_CACHE_DAYS * 24 * 60 * 60 * 1000
+    for (const [id, entry] of Object.entries(parsed)) {
+      if (entry.savedAt > oldest) savedDetails[id] = entry
+    }
+  } catch {
+    // Storage blocked or corrupted: start empty
+  }
+  return savedDetails
+}
+
+function saveDetailsSoon() {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    try {
+      const entries = Object.entries(savedDetails)
+        .sort((a, b) => b[1].savedAt - a[1].savedAt)
+        .slice(0, DETAILS_CACHE_MAX)
+      globalThis.localStorage?.setItem(DETAILS_CACHE_KEY, JSON.stringify(Object.fromEntries(entries)))
+    } catch {
+      // Storage full or blocked: the in-memory copy still works
+    }
+  }, 500)
+}
+
+function compactDetails(data) {
+  const us = data.release_dates?.results?.find((r) => r.iso_3166_1 === 'US')
+  return {
+    runtime: data.runtime || 0,
+    certification: us?.release_dates?.map((d) => d.certification).find(Boolean) ?? '',
+    keywordIds: data.keywords?.keywords?.map((k) => k.id) ?? [],
+    inCollection: Boolean(data.belongs_to_collection),
+    budget: data.budget || 0,
+  }
+}
+
+const detailRequests = new Map() // movieId -> Promise<details | null>
+
+function requestDetails(id, urgent) {
+  const saved = loadSavedDetails()[id]
+  if (saved) return Promise.resolve(saved.details)
+
+  return limited(
+    () => tmdbGet(`/movie/${id}`, { append_to_response: 'keywords,release_dates' }),
+    { urgent, key: id },
+  )
+    .then((data) => {
+      const details = compactDetails(data)
+      savedDetails[id] = { savedAt: Date.now(), details }
+      saveDetailsSoon()
+      return details
+    })
+    .catch(() => {
+      detailRequests.delete(id) // allow a retry later
+      return null
+    })
+}
+
+// Returns { [movieId]: details } for the ids that loaded
+export async function fetchDetails(ids, { urgent = true } = {}) {
+  const entries = await Promise.all(
+    ids.map(async (id) => {
+      if (!detailRequests.has(id)) detailRequests.set(id, requestDetails(id, urgent))
+      else if (urgent) hurry(id) // was preloading in the background: do it now
+      return [id, await detailRequests.get(id)]
+    }),
+  )
+  return Object.fromEntries(entries.filter(([, details]) => details))
+}
+
+// Start loading details in the background so they're ready when needed
+export function prefetchDetails(ids) {
+  fetchDetails(ids, { urgent: false }).catch(() => {})
 }

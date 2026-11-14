@@ -1,0 +1,194 @@
+{
+  "timeTravel": {
+    "label": "Time travel",
+    "keywords": { "time travel": 4379, "time loop": 10854, "time machine": 5455, "time paradox": 208757 }
+  },
+  "space": {
+    "label": "Set in space",
+    "keywords": { "outer space": 252634, "space travel": 3801, "spacecraft": 1612, "space station": 156039, "astronaut": 14626, "space mission": 4040 }
+  },
+  "aliens": {
+    "label": "Aliens",
+    "keywords": { "alien": 9951, "alien invasion": 14909, "extraterrestrial": 9739, "alien life-form": 4862, "first contact": 211248, "ufo": 9738 }
+  },
+  "ai": {
+    "label": "Robots & AI",
+    "keywords": { "artificial intelligence (a.i.)": 310, "robot": 14544, "android": 803, "cyborg": 679 }
+  },
+  "dystopia": {
+    "label": "Dystopian future",
+    "keywords": { "dystopia": 4565, "post-apocalyptic future": 4458, "post-apocalyptic": 359337, "apocalypse": 12332, "totalitarian regime": 2137 }
+  },
+  "mindBending": {
+    "label": "Mind-bending",
+    "keywords": { "dream": 346773, "parallel world": 33465, "nonlinear timeline": 157171, "surrealism": 9887, "reality vs fantasy": 170351, "amnesia": 1453, "mind-bending": 362567, "alternative reality": 175629 }
+  },
+  "twist": {
+    "label": "Twist ending",
+    "keywords": { "twist ending": 326438, "plot twist": 275311, "surprise ending": 335567, "twist": 3874 }
+  },
+  "supernatural": {
+    "label": "Ghosts & the supernatural",
+    "keywords": { "ghost": 162846, "haunted house": 3358, "supernatural": 6152, "possession": 9712, "demon": 15001, "exorcism": 2626, "paranormal": 9853, "haunting": 10224, "curse": 10541, "evil spirit": 10114 }
+  },
+  "slasher": {
+    "label": "Slasher",
+    "keywords": { "slasher": 12339, "masked killer": 305666, "stalker": 6844 }
+  },
+  "monster": {
+    "label": "Monsters & creatures",
+    "keywords": { "monster": 1299, "creature": 13031, "giant monster": 11100, "kaiju": 161791, "creature feature": 158126, "shark": 15097, "dinosaur": 12616 }
+  },
+  "zombie": {
+    "label": "Zombies",
+    "keywords": { "zombie": 12377, "zombie apocalypse": 186565 }
+  },
+  "vampire": {
+    "label": "Vampires & werewolves",
+    "keywords": { "vampire": 3133, "werewolf": 12564 }
+  },
+  "psychological": {
+    "label": "Psychological",
+    "keywords": { "psychological thriller": 12565, "psychological horror": 295907, "paranoia": 2340, "insanity": 6255, "psychopath": 6259 }
+  },
+  "foundFootage": {
+    "label": "Found footage",
+    "keywords": { "found footage": 163053 }
+  },
+  "darkComedy": {
+    "label": "Dark comedy",
+    "keywords": { "dark comedy": 10123, "black comedy": 383021 }
+  },
+  "parody": {
+    "label": "Parody & spoof",
+    "keywords": { "parody": 9755, "spoof": 11931, "mockumentary": 11800 }
+  },
+  "satire": {
+    "label": "Satire",
+    "keywords": { "satire": 8201, "political satire": 169086, "social satire": 11514 }
+  },
+  "buddy": {
+    "label": "Buddy comedy",
+    "keywords": { "buddy comedy": 167541, "buddy cop": 167316 }
+  },
+  "friendship": {
+    "label": "Friendship",
+    "keywords": { "friendship": 6054, "best friend": 12392, "unlikely friendship": 167982 }
+  },
+  "magic": {
+    "label": "Magic & wizards",
+    "keywords": { "magic": 2343, "wizard": 177912, "witch": 616, "sorcery": 5147, "witchcraft": 40931, "magic school": 291549 }
+  },
+  "creatures": {
+    "label": "Dragons & mythical creatures",
+    "keywords": { "dragon": 12554, "mythical creature": 5457, "unicorn": 163227, "troll": 11173, "elves": 603, "goblin": 189094 }
+  },
+  "fairyTale": {
+    "label": "Fairy tale",
+    "keywords": { "fairy tale": 3205, "based on fairy tale": 179411 }
+  },
+  "mythology": {
+    "label": "Mythology",
+    "keywords": { "greek mythology": 2036, "mythology": 2035, "norse mythology": 179101, "greek god": 206491, "based on myths, legends or folklore": 185343 }
+  },
+  "superhero": {
+    "label": "Superheroes",
+    "keywords": { "superhero": 9715, "marvel cinematic universe (mcu)": 180547, "dc extended universe (dceu)": 229266, "super power": 33637, "superhero team": 155030 }
+  },
+  "martialArts": {
+    "label": "Martial arts",
+    "keywords": { "martial arts": 779, "kung fu": 780, "karate": 3436, "samurai": 1462, "ninja": 10278 }
+  },
+  "spy": {
+    "label": "Spies",
+    "keywords": { "spy": 470, "espionage": 5265, "secret agent": 4289, "cia": 383851, "secret mission": 3269, "undercover": 1568 }
+  },
+  "cars": {
+    "label": "Cars & racing",
+    "keywords": { "car chase": 382327, "car race": 830, "street racing": 266725, "race car": 191279, "racing": 10039 }
+  },
+  "heist": {
+    "label": "Heist",
+    "keywords": { "heist": 10051, "bank robbery": 15363, "robbery": 642, "con artist": 10453, "thief": 9727 }
+  },
+  "gangster": {
+    "label": "Gangsters & mafia",
+    "keywords": { "gangster": 3149, "mafia": 10391, "organized crime": 10291, "mobster": 11578, "drug cartel": 10175, "drug dealer": 2231, "yakuza": 1794 }
+  },
+  "detective": {
+    "label": "Detective story",
+    "keywords": { "detective": 703, "investigation": 5340, "murder investigation": 161982, "private detective": 155790, "whodunit": 12570, "police detective": 15167, "murder mystery": 207046 }
+  },
+  "serialKiller": {
+    "label": "Serial killer",
+    "keywords": { "serial killer": 10714 }
+  },
+  "courtroom": {
+    "label": "Courtroom drama",
+    "keywords": { "courtroom": 33519, "lawyer": 10909, "trial": 11038, "court case": 3012, "courtroom drama": 214780 }
+  },
+  "prison": {
+    "label": "Prison",
+    "keywords": { "prison": 378, "prison escape": 9777, "prisoner": 1563, "jail": 9890 }
+  },
+  "trueStory": {
+    "label": "True story",
+    "keywords": { "based on true story": 9672, "true story": 387501 }
+  },
+  "biography": {
+    "label": "Biopic",
+    "keywords": { "biography": 5565, "biopic": 360939, "based on real person": 328926 }
+  },
+  "comingOfAge": {
+    "label": "Coming of age",
+    "keywords": { "coming of age": 10683, "growing up": 9825 }
+  },
+  "familyRel": {
+    "label": "Family relationships",
+    "keywords": { "family relationships": 10235, "father son relationship": 240119, "mother daughter relationship": 240315, "father daughter relationship": 240303, "mother son relationship": 240237, "dysfunctional family": 10041, "sibling relationship": 380 }
+  },
+  "tragedy": {
+    "label": "Tragedy",
+    "keywords": { "tragedy": 10614, "heartbreak": 34265 }
+  },
+  "sports": {
+    "label": "Sports",
+    "keywords": { "sports": 6075, "sport": 333328, "boxing": 209476, "american football": 579, "basketball": 6496, "baseball": 1480, "football (soccer)": 13042, "underdog": 240, "olympic games": 2070 }
+  },
+  "survival": {
+    "label": "Survival",
+    "keywords": { "survival": 10349, "stranded": 9743, "wilderness": 3593, "natural disaster": 5096, "disaster": 10617, "shipwreck": 2580 }
+  },
+  "animals": {
+    "label": "Talking animals",
+    "keywords": { "talking animal": 267848, "anthropomorphism": 11477 }
+  },
+  "royalty": {
+    "label": "Royalty",
+    "keywords": { "princess": 7376, "prince": 3071, "king": 13084, "queen": 2011, "royalty": 9920 }
+  },
+  "christmas": {
+    "label": "Christmas",
+    "keywords": { "christmas": 207317, "christmas eve": 260365, "santa claus": 1991 }
+  },
+  "book": {
+    "label": "Based on a book",
+    "keywords": { "based on novel or book": 818, "based on young adult novel": 246466, "based on short story": 156866 }
+  },
+  "revenge": {
+    "label": "Revenge",
+    "keywords": { "revenge": 9748, "vengeance": 232766 }
+  },
+  "roadTrip": {
+    "label": "Road trip",
+    "keywords": { "road trip": 7312, "road movie": 167043 }
+  },
+  "highSchool": {
+    "label": "High school",
+    "keywords": { "high school": 6270, "high school student": 33910, "prom": 10266 }
+  },
+  "music": {
+    "label": "Music",
+    "keywords": { "musician": 4048, "rock band": 18001, "music": 283297, "singer": 10229, "concert": 6029, "band": 311916, "hip-hop": 898, "jazz": 1416, "rock 'n' roll": 578 }
+  }
+}

@@ -23,6 +23,13 @@ export default function ResultScreen({ game, onSeen, onRestart, canContinue, onC
   const reasons = explainPick(game, movie)
   const poster = posterUrl(movie.poster_path)
   const genres = movie.genre_ids.map((id) => GENRES[id]).join(', ')
+  const runtime = movie.details?.runtime
+  const meta = [
+    `★ ${movie.vote_average.toFixed(1)} (${movie.vote_count.toLocaleString()} votes)`,
+    movie.details?.certification,
+    runtime && `${Math.floor(runtime / 60)}h ${runtime % 60}m`,
+    genres,
+  ].filter(Boolean)
 
   return (
     <section className="result">
@@ -39,10 +46,7 @@ export default function ResultScreen({ game, onSeen, onRestart, canContinue, onC
           <h2 className="result-title">
             {movie.title} <span className="result-year">({releaseYear(movie)})</span>
           </h2>
-          <p className="result-meta">
-            ★ {movie.vote_average.toFixed(1)} · {movie.vote_count.toLocaleString()} votes
-            {genres && ` · ${genres}`}
-          </p>
+          <p className="result-meta">{meta.join(' · ')}</p>
           <p className="result-overview">{movie.overview}</p>
 
           {reasons.length > 0 && (

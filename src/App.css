@@ -25,6 +25,29 @@
   color: var(--accent);
 }
 
+/* The ReelMind title doubles as a "back to start" button */
+.title-button {
+  padding: 0 8px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: text-shadow 0.15s;
+}
+
+.title-button:hover {
+  text-shadow: 0 0 18px rgba(245, 179, 1, 0.6);
+}
+
+.title-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
 a {
   color: var(--accent);
 }

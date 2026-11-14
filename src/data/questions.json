@@ -1,107 +1,108 @@
 [
-  {
-    "id": "animated",
-    "tier": 1,
-    "hard": true,
-    "text": "Do you want to watch an animated movie?",
-    "traits": { "genre:16": 1 }
-  },
-  {
-    "id": "recent",
-    "tier": 1,
-    "text": "Do you want something recent (2015 or newer)?",
-    "traits": { "era:recent": 1 }
-  },
-  {
-    "id": "classic",
-    "tier": 1,
-    "text": "Are you in the mood for an older classic (before 1990)?",
-    "traits": { "era:classic": 1 }
-  },
-  {
-    "id": "family",
-    "tier": 1,
-    "text": "Do you want a family-friendly movie?",
-    "traits": { "genre:10751": 1 }
-  },
-  {
-    "id": "foreign",
-    "tier": 1,
-    "hard": true,
-    "text": "Do you want a movie that isn't in English?",
-    "traits": { "lang:foreign": 1 }
-  },
-  {
-    "id": "laugh",
-    "tier": 2,
-    "text": "Do you want to laugh?",
-    "traits": { "genre:35": 1, "tone:light": 0.5 }
-  },
-  {
-    "id": "scared",
-    "tier": 2,
-    "text": "Do you want to be scared?",
-    "traits": { "genre:27": 1, "genre:53": 0.3 }
-  },
-  {
-    "id": "tense",
-    "tier": 2,
-    "text": "Do you want something tense that keeps you on the edge of your seat?",
-    "traits": { "genre:53": 1, "genre:80": 0.5, "genre:9648": 0.5 }
-  },
-  {
-    "id": "emotional",
-    "tier": 2,
-    "text": "Are you up for something emotional that might make you cry?",
-    "traits": { "genre:18": 1, "tone:light": -0.5 }
-  },
-  {
-    "id": "action",
-    "tier": 3,
-    "text": "Do you want lots of action?",
-    "traits": { "genre:28": 1, "genre:12": 0.5 }
-  },
-  {
-    "id": "scifi",
-    "tier": 3,
-    "text": "Are you in the mood for science fiction?",
-    "traits": { "genre:878": 1 }
-  },
-  {
-    "id": "fantasy",
-    "tier": 3,
-    "text": "Do you want magic or fantasy?",
-    "traits": { "genre:14": 1 }
-  },
-  {
-    "id": "romance",
-    "tier": 3,
-    "text": "Do you want a love story?",
-    "traits": { "genre:10749": 1 }
-  },
-  {
-    "id": "crime",
-    "tier": 3,
-    "text": "Are you in the mood for a crime story?",
-    "traits": { "genre:80": 1 }
-  },
-  {
-    "id": "acclaimed",
-    "tier": 3,
-    "text": "Do you want something critics and audiences loved?",
-    "traits": { "perception:acclaimed": 1 }
-  },
-  {
-    "id": "hidden-gem",
-    "tier": 3,
-    "text": "Are you up for a hidden gem most people haven't seen?",
-    "traits": { "perception:hiddenGem": 1, "perception:bigHit": -0.5 }
-  },
-  {
-    "id": "like-movie",
-    "tier": 4,
-    "repeat": 2,
-    "fill": "movie",
-    "text": "Do you want to watch a movie like [movie]?"
-  }
+  { "id": "animated", "tier": 1, "hard": true, "text": "Do you want to watch an animated movie?", "traits": { "genre:16": 1 } },
+  { "id": "recent", "tier": 1, "text": "Do you want something recent (2015 or newer)?", "traits": { "era:recent": 1 } },
+  { "id": "classic", "tier": 1, "text": "Are you in the mood for an older classic (before 1990)?", "traits": { "era:classic": 1 } },
+  { "id": "family", "tier": 1, "text": "Do you want a family-friendly movie?", "traits": { "genre:10751": 1 } },
+  { "id": "foreign", "tier": 1, "hard": true, "text": "Do you want a movie that isn't in English?", "traits": { "lang:foreign": 1 } },
+  { "id": "lighthearted", "tier": 1, "text": "Do you want something lighthearted rather than serious?", "traits": { "tone:light": 1 } },
+  { "id": "well-known", "tier": 1, "text": "Do you want a big, well-known movie?", "traits": { "perception:bigHit": 1 } },
+
+  { "id": "laugh", "tier": 2, "text": "Do you want to laugh?", "traits": { "genre:35": 1, "tone:light": 0.5 } },
+  { "id": "scared", "tier": 2, "text": "Do you want to be scared?", "traits": { "genre:27": 1, "genre:53": 0.3 } },
+  { "id": "tense", "tier": 2, "text": "Do you want something tense that keeps you on the edge of your seat?", "traits": { "genre:53": 1, "genre:80": 0.5, "genre:9648": 0.5 } },
+  { "id": "emotional", "tier": 2, "text": "Are you up for something emotional that might make you cry?", "traits": { "genre:18": 1, "tone:light": -0.5 } },
+  { "id": "adventure", "tier": 2, "text": "Do you want an exciting adventure?", "traits": { "genre:12": 1, "genre:28": 0.5 } },
+  { "id": "love", "tier": 2, "text": "Do you want a love story?", "traits": { "genre:10749": 1 } },
+  { "id": "mind-bending", "tier": 2, "text": "Do you want something mind-bending that makes you think?", "traits": { "theme:mindBending": 1, "theme:twist": 0.5, "genre:878": 0.3 } },
+
+  { "id": "action", "tier": 3, "text": "Do you want lots of action?", "traits": { "genre:28": 1, "genre:12": 0.5 } },
+  { "id": "scifi", "tier": 3, "text": "Are you in the mood for science fiction?", "traits": { "genre:878": 1 } },
+  { "id": "fantasy", "tier": 3, "text": "Do you want magic or fantasy?", "traits": { "genre:14": 1 } },
+  { "id": "crime", "tier": 3, "text": "Are you in the mood for a crime story?", "traits": { "genre:80": 1 } },
+  { "id": "mystery", "tier": 3, "text": "Do you want a mystery to figure out?", "traits": { "genre:9648": 1 } },
+  { "id": "war", "tier": 3, "text": "Do you want a war movie?", "traits": { "genre:10752": 1 } },
+  { "id": "history", "tier": 3, "text": "Do you want something set in a real period of history?", "traits": { "genre:36": 1 } },
+  { "id": "western", "tier": 3, "text": "Are you in the mood for a western?", "traits": { "genre:37": 1 } },
+  { "id": "music", "tier": 3, "text": "Do you want a movie about music or musicians?", "traits": { "genre:10402": 1, "theme:music": 0.5 } },
+  { "id": "acclaimed", "tier": 3, "text": "Do you want something critics and audiences loved?", "traits": { "perception:acclaimed": 1 } },
+  { "id": "hidden-gem", "tier": 3, "text": "Are you up for a hidden gem most people haven't seen?", "traits": { "perception:hiddenGem": 1, "perception:bigHit": -0.5 } },
+  { "id": "cult", "tier": 3, "text": "Are you up for a cult classic?", "traits": { "perception:cult": 1 } },
+  { "id": "guilty-pleasure", "tier": 3, "text": "Do you want a guilty pleasure, the kind critics didn't love but people still enjoy?", "traits": { "perception:guiltyPleasure": 1 } },
+  { "id": "trending", "tier": 3, "text": "Do you want something people are talking about right now?", "traits": { "perception:trending": 1 } },
+  { "id": "short", "tier": 3, "text": "Do you want something short, under 100 minutes?", "traits": { "length:short": 1 } },
+  { "id": "long", "tier": 3, "text": "Are you up for a long epic (2h20 or more)?", "traits": { "length:long": 1 } },
+  { "id": "grown-up", "tier": 3, "text": "Do you want something made for grown-ups (rated R)?", "traits": { "rating:adult": 1 } },
+  { "id": "franchise", "tier": 3, "text": "Do you want a movie that's part of a series or franchise?", "traits": { "franchise": 1 } },
+  { "id": "blockbuster", "tier": 3, "text": "Do you want a big-budget blockbuster?", "traits": { "budget:big": 1 } },
+  { "id": "70s", "tier": 3, "text": "Do you want something from the 70s?", "traits": { "era:70s": 1 } },
+  { "id": "80s", "tier": 3, "text": "Do you want something from the 80s?", "traits": { "era:80s": 1 } },
+  { "id": "90s", "tier": 3, "text": "Do you want something from the 90s?", "traits": { "era:90s": 1 } },
+  { "id": "2000s", "tier": 3, "text": "Do you want something from the 2000s?", "traits": { "era:2000s": 1 } },
+  { "id": "2010s", "tier": 3, "text": "Do you want something from the 2010s?", "traits": { "era:2010s": 1 } },
+  { "id": "2020s", "tier": 3, "text": "Do you want something from the last few years (2020 or newer)?", "traits": { "era:2020s": 1 } },
+
+  { "id": "ghosts", "tier": 4, "follows": ["scared"], "text": "Do you want ghosts, demons or the supernatural?", "traits": { "theme:supernatural": 1 } },
+  { "id": "slasher", "tier": 4, "follows": ["scared"], "text": "Do you want a slasher with a killer on the loose?", "traits": { "theme:slasher": 1 } },
+  { "id": "monsters", "tier": 4, "follows": ["scared", "adventure", "action"], "text": "Do you want monsters or giant creatures?", "traits": { "theme:monster": 1 } },
+  { "id": "zombies", "tier": 4, "follows": ["scared", "action"], "text": "Do you want zombies?", "traits": { "theme:zombie": 1 } },
+  { "id": "vampires", "tier": 4, "follows": ["scared", "fantasy"], "text": "Do you want vampires or werewolves?", "traits": { "theme:vampire": 1 } },
+  { "id": "psychological", "tier": 4, "follows": ["scared", "tense"], "text": "Do you want something psychological that messes with your head?", "traits": { "theme:psychological": 1 } },
+  { "id": "found-footage", "tier": 4, "follows": ["scared"], "text": "Are you up for found-footage horror?", "traits": { "theme:foundFootage": 1 } },
+
+  { "id": "romcom", "tier": 4, "follows": ["laugh", "love"], "text": "Do you want a romantic comedy?", "traits": { "genre:10749": 1, "genre:35": 0.5 } },
+  { "id": "dark-comedy", "tier": 4, "follows": ["laugh"], "text": "Do you want a dark comedy?", "traits": { "theme:darkComedy": 1 } },
+  { "id": "parody", "tier": 4, "follows": ["laugh"], "text": "Do you want a parody or spoof?", "traits": { "theme:parody": 1 } },
+  { "id": "satire", "tier": 4, "follows": ["laugh"], "text": "Do you want satire that pokes fun at society or politics?", "traits": { "theme:satire": 1 } },
+  { "id": "buddy", "tier": 4, "follows": ["laugh", "action"], "text": "Do you want a buddy comedy?", "traits": { "theme:buddy": 1 } },
+
+  { "id": "space", "tier": 4, "follows": ["scifi", "adventure"], "text": "Do you want it set in space?", "traits": { "theme:space": 1 } },
+  { "id": "aliens", "tier": 4, "follows": ["scifi", "scared"], "text": "Do you want aliens?", "traits": { "theme:aliens": 1 } },
+  { "id": "robots", "tier": 4, "follows": ["scifi"], "text": "Do you want robots or artificial intelligence?", "traits": { "theme:ai": 1 } },
+  { "id": "dystopia", "tier": 4, "follows": ["scifi", "action"], "text": "Do you want a dystopian or post-apocalyptic world?", "traits": { "theme:dystopia": 1 } },
+  { "id": "time-travel", "tier": 4, "text": "Do you want time travel?", "traits": { "theme:timeTravel": 1 } },
+
+  { "id": "magic", "tier": 4, "follows": ["fantasy", "family"], "text": "Do you want wizards and magic?", "traits": { "theme:magic": 1 } },
+  { "id": "dragons", "tier": 4, "follows": ["fantasy", "adventure"], "text": "Do you want dragons or mythical creatures?", "traits": { "theme:creatures": 1 } },
+  { "id": "fairy-tale", "tier": 4, "follows": ["fantasy", "family", "animated"], "text": "Do you want a fairy tale?", "traits": { "theme:fairyTale": 1 } },
+  { "id": "mythology", "tier": 4, "follows": ["fantasy", "adventure"], "text": "Do you want gods and mythology?", "traits": { "theme:mythology": 1 } },
+
+  { "id": "superhero", "tier": 4, "follows": ["action", "scifi", "fantasy", "adventure"], "text": "Do you want a superhero movie?", "traits": { "theme:superhero": 1 } },
+  { "id": "martial-arts", "tier": 4, "follows": ["action"], "text": "Do you want martial arts?", "traits": { "theme:martialArts": 1 } },
+  { "id": "spy", "tier": 4, "follows": ["action", "tense"], "text": "Do you want spies and secret missions?", "traits": { "theme:spy": 1 } },
+  { "id": "cars", "tier": 4, "follows": ["action"], "text": "Do you want car chases or racing?", "traits": { "theme:cars": 1 } },
+  { "id": "heist", "tier": 4, "follows": ["crime", "action", "tense"], "text": "Do you want a heist?", "traits": { "theme:heist": 1 } },
+
+  { "id": "gangsters", "tier": 4, "follows": ["crime"], "text": "Do you want gangsters or the mafia?", "traits": { "theme:gangster": 1 } },
+  { "id": "detective", "tier": 4, "follows": ["crime", "mystery"], "text": "Do you want a detective cracking a case?", "traits": { "theme:detective": 1 } },
+  { "id": "serial-killer", "tier": 4, "follows": ["crime", "tense", "scared"], "text": "Do you want a serial killer story?", "traits": { "theme:serialKiller": 1 } },
+  { "id": "courtroom", "tier": 4, "follows": ["crime", "emotional"], "text": "Do you want a courtroom drama?", "traits": { "theme:courtroom": 1 } },
+  { "id": "prison", "tier": 4, "follows": ["crime", "emotional"], "text": "Do you want a story set in prison?", "traits": { "theme:prison": 1 } },
+  { "id": "twist", "tier": 4, "follows": ["tense", "mystery", "mind-bending"], "text": "Do you want a big twist ending?", "traits": { "theme:twist": 1 } },
+
+  { "id": "coming-of-age", "tier": 4, "follows": ["emotional", "laugh"], "text": "Do you want a coming-of-age story?", "traits": { "theme:comingOfAge": 1 } },
+  { "id": "family-drama", "tier": 4, "follows": ["emotional", "family"], "text": "Do you want a story about family relationships?", "traits": { "theme:familyRel": 1 } },
+  { "id": "heartbreak", "tier": 4, "follows": ["love", "emotional"], "text": "Do you want a romance that might end in heartbreak?", "traits": { "genre:10749": 1, "theme:tragedy": 1, "tone:light": -0.5 } },
+  { "id": "friendship", "tier": 4, "follows": ["emotional", "laugh", "family"], "text": "Do you want a story about friendship?", "traits": { "theme:friendship": 1 } },
+  { "id": "biopic", "tier": 4, "follows": ["true-story", "music", "history"], "text": "Do you want a biopic about a real person?", "traits": { "theme:biography": 1 } },
+
+  { "id": "true-story", "tier": 4, "text": "Do you want a movie based on a true story?", "traits": { "theme:trueStory": 1 } },
+  { "id": "book", "tier": 4, "text": "Do you want a movie based on a book?", "traits": { "theme:book": 1 } },
+  { "id": "sports", "tier": 4, "text": "Do you want a sports movie?", "traits": { "theme:sports": 1 } },
+  { "id": "survival", "tier": 4, "text": "Do you want a survival story?", "traits": { "theme:survival": 1 } },
+  { "id": "revenge", "tier": 4, "text": "Do you want a revenge story?", "traits": { "theme:revenge": 1 } },
+  { "id": "road-trip", "tier": 4, "text": "Do you want a road trip movie?", "traits": { "theme:roadTrip": 1 } },
+  { "id": "high-school", "tier": 4, "text": "Do you want a story set in high school?", "traits": { "theme:highSchool": 1 } },
+  { "id": "christmas", "tier": 4, "text": "Do you want a Christmas movie?", "traits": { "theme:christmas": 1 } },
+
+  { "id": "talking-animals", "tier": 4, "follows": ["family", "animated"], "text": "Do you want talking animals?", "traits": { "theme:animals": 1 } },
+  { "id": "royalty", "tier": 4, "follows": ["family", "fantasy", "history"], "text": "Do you want princesses, kings and queens?", "traits": { "theme:royalty": 1 } },
+  { "id": "anime", "tier": 4, "hard": true, "follows": ["animated", "foreign"], "text": "Do you want anime?", "traits": { "format:anime": 1 } },
+
+  { "id": "korean", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a Korean movie?", "traits": { "lang:ko": 1 } },
+  { "id": "japanese", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a Japanese movie?", "traits": { "lang:ja": 1 } },
+  { "id": "french", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a French movie?", "traits": { "lang:fr": 1 } },
+  { "id": "spanish", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a Spanish-language movie?", "traits": { "lang:es": 1 } },
+  { "id": "hindi", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a Hindi movie?", "traits": { "lang:hi": 1 } },
+
+  { "id": "like-movie", "tier": 5, "repeat": 3, "fill": "movie", "text": "Do you want to watch a movie like [movie]?" }
 ]

@@ -14,7 +14,7 @@ export default function DebugPanel({ game }) {
 
       <p>
         {game.pool.length} movies pulled from TMDB · {candidates(game).length} still in the
-        running
+        running · details loaded for {game.pool.filter((movie) => movie.details).length}
       </p>
 
       <h3>Top 5 right now</h3>
