@@ -4,7 +4,7 @@ import { explainPick, rankMovies } from '../engine/engine.js'
 import { GENRES, releaseYear } from '../engine/traits.js'
 import Bubble from './Bubble.jsx'
 
-export default function ResultScreen({ game, onSeen, onRestart }) {
+export default function ResultScreen({ game, onSeen, onRestart, canContinue, onContinue }) {
   const [happy, setHappy] = useState(false)
   const ranked = rankMovies(game)
 
@@ -82,6 +82,11 @@ export default function ResultScreen({ game, onSeen, onRestart }) {
           <button type="button" className="answer-button" onClick={() => onSeen(movie.id)}>
             Already seen it
           </button>
+          {canContinue && (
+            <button type="button" className="answer-button" onClick={onContinue}>
+              Keep narrowing it down
+            </button>
+          )}
           <button type="button" className="answer-button" onClick={onRestart}>
             Play again
           </button>

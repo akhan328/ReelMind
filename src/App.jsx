@@ -2,9 +2,10 @@ import { useState } from 'react'
 import questions from './data/questions.json'
 import { fetchRecommendations, fetchStartingPool } from './api/tmdb.js'
 import {
-  MAX_QUESTIONS,
   applyAnswer,
+  canKeepGoing,
   excludeMovie,
+  keepGoing,
   newGame,
   nextQuestion,
   shouldGuess,
@@ -56,6 +57,22 @@ function App() {
     setBusy(false)
   }
 
+  // Show the best pick so far without answering more questions
+  function stopNow() {
+    setCurrent(null)
+    setPhase('result')
+  }
+
+  // From the result screen: ask more questions to narrow it down further
+  function continueGame() {
+    const extended = keepGoing(game)
+    const question = nextQuestion(extended, questions)
+    if (!question) return
+    setGame(extended)
+    setCurrent(question)
+    setPhase('question')
+  }
+
   return (
     <div className="app">
       <main className="game">
@@ -89,10 +106,12 @@ function App() {
         {phase === 'question' && (
           <QuestionScreen
             number={game.asked.length + 1}
-            max={MAX_QUESTIONS}
+            max={game.questionLimit}
             text={current.text}
             busy={busy}
             onAnswer={handleAnswer}
+            canStop={game.asked.length > 0}
+            onStop={stopNow}
           />
         )}
 
@@ -101,6 +120,8 @@ function App() {
             game={game}
             onSeen={(movieId) => setGame(excludeMovie(game, movieId))}
             onRestart={startGame}
+            canContinue={canKeepGoing(game, questions)}
+            onContinue={continueGame}
           />
         )}
       </main>

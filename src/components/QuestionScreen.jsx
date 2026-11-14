@@ -9,7 +9,15 @@ const ANSWERS = [
   { label: 'Probably not', value: -0.5 },
 ]
 
-export default function QuestionScreen({ number, max, text, busy, onAnswer }) {
+export default function QuestionScreen({
+  number,
+  max,
+  text,
+  busy,
+  onAnswer,
+  canStop,
+  onStop,
+}) {
   return (
     <>
       <Bubble label={`Question ${number} of up to ${max}`} thinking={busy}>
@@ -29,6 +37,12 @@ export default function QuestionScreen({ number, max, text, busy, onAnswer }) {
           </button>
         ))}
       </div>
+
+      {canStop && (
+        <button type="button" className="text-button" disabled={busy} onClick={onStop}>
+          Stop and show my pick
+        </button>
+      )}
     </>
   )
 }

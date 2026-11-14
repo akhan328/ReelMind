@@ -7,8 +7,10 @@
 
 import { addTraits, releaseYear, traitLabel } from './traits.js'
 
-export const MAX_QUESTIONS = 12
+const MAX_QUESTIONS = 12
 const MIN_QUESTIONS = 6 // don't guess before this, unless almost nothing is left
+const KEEP_GOING_MAX = 5 // "Keep narrowing it down" allows up to this many more questions
+const KEEP_GOING_MIN = 3 // ...and asks at least this many before guessing again
 const MIN_MOVIES_LEFT = 5 // a hard filter can't shrink the pool below this
 const CONFIDENT_SHARE = 0.5 // guess early once the top movie holds this share
 const MIN_INFO = 0.25 // skip questions that barely split the pool
@@ -28,6 +30,8 @@ export function newGame(movies) {
     boosts: {}, // movieId -> { amount, because }
     asked: [], // [{ id, text, ref, answer }]
     askCounts: {}, // questionId -> times asked
+    questionLimit: MAX_QUESTIONS, // always guess once this many are asked
+    earliestGuess: MIN_QUESTIONS, // never guess on confidence before this many
   }
 }
 
@@ -210,11 +214,28 @@ export function excludeMovie(game, movieId) {
 
 export function shouldGuess(game) {
   const ranked = rankMovies(game)
+  const asked = game.asked.length
+  if (ranked.length <= 1) return true
+  if (asked >= game.questionLimit) return true
+  if (asked < game.earliestGuess) return false
   if (ranked.length <= 3) return true
-  if (game.asked.length >= MAX_QUESTIONS) return true
-  if (game.asked.length < MIN_QUESTIONS) return false
   const [topShare] = softmax(ranked.map((r) => r.score))
   return topShare >= CONFIDENT_SHARE
+}
+
+// "Keep narrowing it down": raise the limits so the game doesn't stop right away
+export function keepGoing(game) {
+  const asked = game.asked.length
+  return {
+    ...game,
+    questionLimit: Math.max(game.questionLimit, asked + KEEP_GOING_MAX),
+    earliestGuess: Math.max(game.earliestGuess, asked + KEEP_GOING_MIN),
+  }
+}
+
+// False when no question left would split the remaining movies usefully
+export function canKeepGoing(game, questions) {
+  return candidates(game).length > 1 && nextQuestion(keepGoing(game), questions) !== null
 }
 
 // Short reasons for the result screen, e.g. ["Comedy", "Hidden gem", "No Horror"]
