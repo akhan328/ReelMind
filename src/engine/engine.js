@@ -201,9 +201,10 @@ function addToProfile(profile, traits, amount) {
 
 // answerValue: Yes 1, Probably 0.5, Don't know 0, Probably not -0.5, No -1
 // recommendations: only for "like [movie]" questions (fetched live by the caller)
+// Hard Yes/No filters are applied separately by applyHardFilter (see below).
 export function applyAnswer(game, current, answerValue, recommendations = []) {
   const { question, ref, text } = current
-  let next = {
+  const next = {
     ...game,
     asked: [...game.asked, { id: question.id, text, ref, answer: answerValue }],
     askCounts: { ...game.askCounts, [question.id]: (game.askCounts[question.id] ?? 0) + 1 },
@@ -212,19 +213,21 @@ export function applyAnswer(game, current, answerValue, recommendations = []) {
   if (question.fill === 'movie') {
     return applyLikeMovie(next, ref, answerValue, recommendations)
   }
+  return { ...next, profile: addToProfile(next.profile, question.traits, answerValue) }
+}
 
-  next = { ...next, profile: addToProfile(next.profile, question.traits, answerValue) }
-
-  // Hard questions: a plain Yes / No removes movies that don't fit
-  if (question.hard && Math.abs(answerValue) === 1) {
-    const filtered = {
-      ...next,
-      hardFilters: [...next.hardFilters, { trait: mainTrait(question), wanted: answerValue > 0 }],
-    }
-    // Safety net: never filter down to almost nothing
-    if (candidates(filtered).length >= MIN_MOVIES_LEFT) next = filtered
+// Hard questions: a plain Yes / No removes movies that don't fit.
+// Run this AFTER pulling more movies for the answer, so the safety net counts
+// them. Otherwise "Korean? Yes" with only 3 Korean movies in the pool would be
+// treated as a soft answer even though the refill just added 40 more.
+export function applyHardFilter(game, question, answerValue) {
+  if (!question.hard || Math.abs(answerValue) !== 1) return game
+  const filtered = {
+    ...game,
+    hardFilters: [...game.hardFilters, { trait: mainTrait(question), wanted: answerValue > 0 }],
   }
-  return next
+  // Safety net: never filter down to almost nothing
+  return candidates(filtered).length >= MIN_MOVIES_LEFT ? filtered : game
 }
 
 function applyLikeMovie(game, ref, answerValue, recommendations) {
@@ -261,28 +264,11 @@ export function excludeMovie(game, movieId) {
 export function refillQuery(game, question, answerValue) {
   if (answerValue <= 0 || !question.traits) return null
 
-  const genres = new Set()
-  let language = null
-  for (const filter of game.hardFilters) {
-    if (!filter.wanted) {
-      if (filter.trait === 'lang:foreign') language = 'en'
-      continue
-    }
-    if (filter.trait.startsWith('genre:')) genres.add(filter.trait.slice('genre:'.length))
-    if (/^lang:[a-z]{2}$/.test(filter.trait)) language = filter.trait.slice('lang:'.length)
-    if (filter.trait === 'format:anime') {
-      genres.add('16')
-      language = 'ja'
-    }
-  }
-
-  // TMDB can't search for "any language except English", so a search here
-  // would mostly return English movies that get filtered out anyway
-  const anyForeign = game.hardFilters.some((f) => f.trait === 'lang:foreign' && f.wanted)
-  if (anyForeign && !language) return null
-
+  // 1. What this answer asks for
   const params = {}
   const hints = {}
+  const genres = new Set()
+  let language = null
   const trait = mainTrait(question)
   if (trait.startsWith('genre:')) {
     genres.add(trait.slice('genre:'.length))
@@ -294,13 +280,34 @@ export function refillQuery(game, question, answerValue) {
     language = 'ja'
   } else if (/^lang:[a-z]{2}$/.test(trait)) {
     language = trait.slice('lang:'.length)
-  } else if (ERA_DATES[trait] && !anyForeign) {
+  } else if (ERA_DATES[trait]) {
     const [from, to] = ERA_DATES[trait]
     if (from) params['primary_release_date.gte'] = from
     if (to) params['primary_release_date.lte'] = to
   } else {
     return null
   }
+
+  // 2. Keep the hard filters from earlier answers (this answer's language wins)
+  let anyForeign = false
+  for (const filter of game.hardFilters) {
+    if (filter.trait === 'lang:foreign') {
+      if (filter.wanted) anyForeign = true
+      else language ??= 'en'
+      continue
+    }
+    if (!filter.wanted) continue
+    if (filter.trait.startsWith('genre:')) genres.add(filter.trait.slice('genre:'.length))
+    if (/^lang:[a-z]{2}$/.test(filter.trait)) language ??= filter.trait.slice('lang:'.length)
+    if (filter.trait === 'format:anime') {
+      genres.add('16')
+      language ??= 'ja'
+    }
+  }
+
+  // TMDB can't search for "any language except English". Without a specific
+  // language the results would mostly be English movies that get filtered out.
+  if (anyForeign && !language) return null
 
   if (genres.size > 0) params.with_genres = [...genres].join(',')
   if (language) params.with_original_language = language

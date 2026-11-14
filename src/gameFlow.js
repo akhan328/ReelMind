@@ -11,6 +11,7 @@ import {
 import {
   addMovies,
   applyAnswer,
+  applyHardFilter,
   attachDetails,
   missingDetails,
   newGame,
@@ -50,6 +51,9 @@ export async function answerQuestion(game, current, answerValue) {
     const more = await orFallback(fetchMoreMovies(refill.params), [])
     next = addMovies(next, more, refill.hints)
   }
+
+  // Hard Yes/No filters go last, so the movies just pulled count toward the safety net
+  next = applyHardFilter(next, question, answerValue)
 
   if (next.asked.length >= DETAILS_AFTER) next = await loadTopDetails(next)
   return next
