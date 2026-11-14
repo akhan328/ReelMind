@@ -1,20 +1,102 @@
 # ReelMind
 
-A guessing-game-style movie picker. It asks you a few quick questions, then recommends a movie to watch.
+A guessing-game-style movie picker. It asks you a series of quick questions, then recommends a movie to watch.
 
-There's no AI here. The questions are prewritten, and a hand-coded scoring algorithm picks the movie. Movie data is pulled live from [TMDB](https://www.themoviedb.org/).
+There's no AI here. The questions are prewritten, and a hand-coded scoring algorithm picks the movie. Movie data is pulled live from [TMDB](https://www.themoviedb.org/). Movies only, no TV shows.
+
+This is a personal hobby project and isn't hosted anywhere. It runs on your own computer.
+
+## How it works
+
+1. **Start:** it pulls about 200 movies from TMDB, a mix of well-known movies, popular-right-now movies and hidden gems. The mix is random, so every game is different.
+2. **Questions:** you answer with **Yes**, **No**, **Don't know**, **Probably** or **Probably not**.
+3. **Scoring:** every answer adds to a taste profile (genres, mood, era, length, age rating, how the public sees the movie, themes like "heist" or "time travel"). Every movie is scored against that profile.
+4. **Choosing the next question:** it asks whatever best splits the movies at the top of the ranking. Questions go from broad ("animated?") to narrow ("found-footage horror?"). Narrow follow-ups only come up after a Yes to their parent question, so "zombies?" only gets asked after "Do you want to be scared?".
+5. **Pulling more movies:** a Yes to something specific (a genre, theme, decade or language) pulls more matching movies from TMDB. For the top contenders it also loads keywords, runtime and age rating.
+6. **The pick:** usually after 7 to 15 questions, it shows its pick with the poster, rating, runtime, a summary, why it was picked, and a few runner-ups.
+
+## Features
+
+- **Stop and show my pick:** after your first answer, skip straight to a recommendation.
+- **Keep narrowing it down:** from the result screen, answer a few more questions to refine the pick.
+- **Already seen it:** shows the next-best movie instead.
+- **Behind the scenes:** a panel under the game showing the current top 5, your taste profile and any filters. Handy for testing.
+- Click **ReelMind** at the top to go back to the start.
 
 ## Running it
 
-1. Get a free TMDB account and an **API Read Access Token** (Settings → API).
+You need [Node.js](https://nodejs.org/) 20.19+ or 22.12+ and a free TMDB account.
+
+1. On themoviedb.org, go to **Settings → API** and copy your **API Read Access Token** (the long one, not the short API key).
 2. Create a file called `.env.local` in the project folder:
    ```
    VITE_TMDB_TOKEN=your-token-here
    ```
+   `.env.local` is in `.gitignore`, so the token is never committed.
 3. Install and start:
    ```
    npm install
    npm run dev
    ```
+4. Open the address it prints, usually http://localhost:5173.
 
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+If you change `.env.local` while the dev server is running, restart it.
+
+> **Note:** don't deploy this as a public website with your token. Vite builds the token into the page's JavaScript, where anyone could read it.
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the app locally |
+| `npm run build` | Build a production version into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Check the code with oxlint |
+
+## Project layout
+
+```
+src/
+  App.jsx               screens and game state
+  gameFlow.js           runs one turn: apply the answer, pull more movies, load details
+  api/tmdb.js           all TMDB calls, request limiting, and the browser cache for details
+  engine/engine.js      the algorithm: scoring, picking questions, when to guess
+  engine/traits.js      turns TMDB data into traits (genre, era, perception, themes...)
+  data/questions.json   every question
+  data/themes.json      themes and the TMDB keyword ids behind them
+  components/           question screen, result screen, behind-the-scenes panel
+```
+
+The settings that control the algorithm (question limits, how picky it is, and so on) are at the top of `src/engine/engine.js`.
+
+## Adding questions
+
+Questions live in `src/data/questions.json`. Adding one doesn't need any code:
+
+```json
+{
+  "id": "zombies",
+  "tier": 4,
+  "follows": ["scared", "action"],
+  "text": "Do you want zombies?",
+  "traits": { "theme:zombie": 1 }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `id` | Unique name for the question |
+| `tier` | 1 (broad) to 5 (narrowest). Higher tiers only open after a few questions. |
+| `text` | What the user sees |
+| `traits` | What a Yes means, with a weight for each trait. Negative weights mean "less of this". |
+| `follows` | Optional. Only ask after a Yes or Probably to one of these question ids. |
+| `hard` | Optional. A plain Yes or No removes movies that don't match (used for animated and language questions). |
+| `fill` / `repeat` | Used by the "like [movie]" question, which fills in a real movie title. |
+
+Trait names look like `genre:35` (TMDB genre id), `era:90s`, `tone:light`, `perception:hiddenGem`, `lang:ko`, `length:short`, `rating:adult` or `theme:heist`. The full list is in `src/engine/traits.js`.
+
+To add a new theme, add an entry to `src/data/themes.json` with a label and its TMDB keyword ids. You can find keyword ids with TMDB's `/search/keyword` endpoint, or on a keyword's page on themoviedb.org.
+
+## Credits
+
+This product uses the TMDB API but is not endorsed or certified by TMDB. Movie data and posters come from [themoviedb.org](https://www.themoviedb.org/).
