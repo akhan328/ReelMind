@@ -1,0 +1,107 @@
+[
+  {
+    "id": "animated",
+    "tier": 1,
+    "hard": true,
+    "text": "Do you want to watch an animated movie?",
+    "traits": { "genre:16": 1 }
+  },
+  {
+    "id": "recent",
+    "tier": 1,
+    "text": "Do you want something recent (2015 or newer)?",
+    "traits": { "era:recent": 1 }
+  },
+  {
+    "id": "classic",
+    "tier": 1,
+    "text": "Are you in the mood for an older classic (before 1990)?",
+    "traits": { "era:classic": 1 }
+  },
+  {
+    "id": "family",
+    "tier": 1,
+    "text": "Do you want a family-friendly movie?",
+    "traits": { "genre:10751": 1 }
+  },
+  {
+    "id": "foreign",
+    "tier": 1,
+    "hard": true,
+    "text": "Do you want a movie that isn't in English?",
+    "traits": { "lang:foreign": 1 }
+  },
+  {
+    "id": "laugh",
+    "tier": 2,
+    "text": "Do you want to laugh?",
+    "traits": { "genre:35": 1, "tone:light": 0.5 }
+  },
+  {
+    "id": "scared",
+    "tier": 2,
+    "text": "Do you want to be scared?",
+    "traits": { "genre:27": 1, "genre:53": 0.3 }
+  },
+  {
+    "id": "tense",
+    "tier": 2,
+    "text": "Do you want something tense that keeps you on the edge of your seat?",
+    "traits": { "genre:53": 1, "genre:80": 0.5, "genre:9648": 0.5 }
+  },
+  {
+    "id": "emotional",
+    "tier": 2,
+    "text": "Are you up for something emotional that might make you cry?",
+    "traits": { "genre:18": 1, "tone:light": -0.5 }
+  },
+  {
+    "id": "action",
+    "tier": 3,
+    "text": "Do you want lots of action?",
+    "traits": { "genre:28": 1, "genre:12": 0.5 }
+  },
+  {
+    "id": "scifi",
+    "tier": 3,
+    "text": "Are you in the mood for science fiction?",
+    "traits": { "genre:878": 1 }
+  },
+  {
+    "id": "fantasy",
+    "tier": 3,
+    "text": "Do you want magic or fantasy?",
+    "traits": { "genre:14": 1 }
+  },
+  {
+    "id": "romance",
+    "tier": 3,
+    "text": "Do you want a love story?",
+    "traits": { "genre:10749": 1 }
+  },
+  {
+    "id": "crime",
+    "tier": 3,
+    "text": "Are you in the mood for a crime story?",
+    "traits": { "genre:80": 1 }
+  },
+  {
+    "id": "acclaimed",
+    "tier": 3,
+    "text": "Do you want something critics and audiences loved?",
+    "traits": { "perception:acclaimed": 1 }
+  },
+  {
+    "id": "hidden-gem",
+    "tier": 3,
+    "text": "Are you up for a hidden gem most people haven't seen?",
+    "traits": { "perception:hiddenGem": 1, "perception:bigHit": -0.5 }
+  },
+  {
+    "id": "like-movie",
+    "tier": 4,
+    "repeat": 2,
+    "fill": "movie",
+    "text": "Do you want to watch a movie like [movie]?"
+  }
+]
