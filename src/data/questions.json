@@ -104,5 +104,5 @@
   { "id": "spanish", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a Spanish-language movie?", "traits": { "lang:es": 1 } },
   { "id": "hindi", "tier": 4, "hard": true, "follows": ["foreign"], "text": "Do you want a Hindi movie?", "traits": { "lang:hi": 1 } },
 
-  { "id": "like-movie", "tier": 5, "repeat": 3, "fill": "movie", "text": "Do you want to watch a movie like [movie]?" }
+  { "id": "like-movie", "tier": 5, "repeat": 3, "fill": "movie", "slot": [6, 9], "text": "Do you want to watch a movie like [movie]?" }
 ]

@@ -3,8 +3,9 @@
 // 1. Every answer adds weights to a taste profile (trait -> weight).
 // 2. Every movie is scored by how well its traits match the profile.
 // 3. The next question is the one that best splits the top-scoring movies.
-//    Questions go from broad (tier 1) to narrow (tier 5); narrow follow-ups
-//    only open up after a "yes" to their parent question.
+//    Questions go from broad (tier 1) to narrow (tier 5): the preferred tier
+//    drifts narrower as the game goes, and narrow follow-ups only open up
+//    after a "yes" to their parent question.
 // 4. Stop when one movie is clearly ahead, few are left, or the limit is hit.
 
 import { addTraits, isDetailTrait, releaseYear, themeKeywordIds, traitLabel } from './traits.js'
@@ -17,11 +18,21 @@ const MIN_MOVIES_LEFT = 5 // a hard filter can't shrink the pool below this
 const CONFIDENT_SHARE = 0.5 // guess early once the top movie holds this share
 const MIN_INFO = 0.25 // skip questions that barely split the pool
 const TIER_UNLOCK = { 1: 0, 2: 1, 3: 3, 4: 4, 5: 6 } // questions asked before a tier opens
-const TIER_PENALTY = 0.15 // prefer broad questions over narrow ones
-const FOLLOW_UP_BONUS = 0.15 // nudge follow-ups so they come soon after their parent
+const START_TIER = 1 // the game prefers broad questions at the start...
+const END_TIER = 4.5 // ...and drifts toward narrow ones by the end
+const TIER_PENALTY = 0.12 // per tier a question is away from where the game is
+// A question whose Yes pulls more movies counts as if at least this share of
+// the pool matched (the pool understates how many such movies TMDB has)
+const BROAD_SHARE_FLOOR = 0.25 // tiers 1-2 (broad and mood, e.g. "Do you want to be scared?")
+const SHARE_FLOOR = 0.15 // tier 3 (genres, decades) and follow-ups
+const NARROW_SHARE_FLOOR = 0.08 // stand-alone narrow questions (nothing says they're relevant yet)
+const FOLLOW_UP_BONUS = 0.1 // follow-up whose parent got a Yes at some point
+const FRESH_FOLLOW_UP_BONUS = 0.3 // ...or within the last FRESH_WINDOW questions
+const FRESH_WINDOW = 2
 const CLOSE_ENOUGH = 0.2 // pick randomly among questions this close to the best
 const SIMILAR_WEIGHT = 0.6 // "like [movie]": weight per genre that movie has
 const RECOMMENDED_BOOST = 1 // "like [movie]": bonus for TMDB's recommendations
+const REFERENCE_PENALTY = 1 // "like [movie]": the [movie] itself drops a bit, so similar movies rank above it
 const MIN_REF_VOTES = 2000 // [movie] has to be well known enough to recognize
 
 // Release-date ranges used when pulling more movies for an era answer
@@ -128,37 +139,82 @@ function needsDetails(question) {
   return Object.keys(question.traits ?? {}).some(isDetailTrait)
 }
 
-// Follow-ups need a Yes / Probably to at least one parent question
-function followsSatisfied(game, question) {
-  if (!question.follows) return true
-  return game.asked.some((a) => question.follows.includes(a.id) && a.answer > 0)
+// Follow-ups need a Yes / Probably to at least one parent question.
+// Returns the most recent such parent and how many questions ago it was.
+function latestYesParent(game, question) {
+  if (!question.follows) return null
+  for (let i = game.asked.length - 1; i >= 0; i--) {
+    const { id, answer } = game.asked[i]
+    if (question.follows.includes(id) && answer > 0) return { id, ago: game.asked.length - i }
+  }
+  return null
 }
 
-// A well-known movie from near the top of the current ranking
+// A well-known movie from near the top of the current ranking. Skips the top
+// 3 so the question compares against a close alternative, and the [movie]
+// penalty doesn't land on the current front-runners.
 function pickReferenceMovie(game, ranked) {
   const usedIds = game.asked.filter((a) => a.ref).map((a) => a.ref.id)
   const options = ranked
-    .slice(0, 15)
+    .slice(3, 15)
     .map((r) => r.movie)
     .filter((movie) => movie.vote_count >= MIN_REF_VOTES && !usedIds.includes(movie.id))
     .sort((a, b) => b.vote_count - a.vote_count)
   return options[0] ?? null
 }
 
+// The tier the game "should" be on: 1 (broad) at the start, drifting to
+// narrow by the end. Questions far from it get a penalty.
+function targetTier(game) {
+  const progress = Math.min(1, game.asked.length / game.questionLimit)
+  return START_TIER + (END_TIER - START_TIER) * progress
+}
+
+// Would a Yes pull more matching movies from TMDB? If so, the current pool
+// understates how many exist (e.g. 2% zombie movies now, 40 more on a Yes).
+function canPullMore(game, question) {
+  return question.fill === 'movie' || refillQuery(game, question, 1) !== null
+}
+
+// Questions with a "slot" (e.g. [6, 9]) are asked once, at a random question
+// number in that range. Each turn in the range has an equal chance.
+function slotIsDue(game, question, random) {
+  if (!question.slot || (game.askCounts[question.id] ?? 0) > 0) return false
+  const number = game.asked.length + 1
+  const [from, to] = question.slot
+  if (number < from || number > to) return false
+  return random() < 1 / (to - number + 1)
+}
+
+function withText(question, ref) {
+  const text = ref
+    ? question.text.replace('[movie]', `${ref.title} (${releaseYear(ref)})`)
+    : question.text
+  return { question, ref, text }
+}
+
 export function nextQuestion(game, questions, random = Math.random) {
   const ranked = rankMovies(game)
   if (ranked.length === 0) return null
   const weights = softmax(ranked.map((r) => r.score))
+  const target = targetTier(game)
+  const tierOf = Object.fromEntries(questions.map((q) => [q.id, q.tier]))
 
   const options = []
   for (const question of questions) {
     if ((game.askCounts[question.id] ?? 0) >= (question.repeat ?? 1)) continue
-    if (game.asked.length < TIER_UNLOCK[question.tier]) continue
-    if (!followsSatisfied(game, question)) continue
+    const parent = latestYesParent(game, question)
+    if (question.follows && !parent) continue
+    const fresh = parent !== null && parent.ago <= FRESH_WINDOW
     if (needsDetails(question) && !game.detailsLoaded) continue
 
     const ref = question.fill === 'movie' ? pickReferenceMovie(game, ranked) : null
     if (question.fill === 'movie' && !ref) continue
+
+    // A question whose slot has come up jumps the line
+    if (slotIsDue(game, question, random)) return withText(question, ref)
+    // A fresh Yes to the parent unlocks a follow-up right away
+    if (!fresh && game.asked.length < TIER_UNLOCK[question.tier]) continue
 
     // Weighted share of movies on each side of the question
     let yes = 0
@@ -169,11 +225,21 @@ export function nextQuestion(game, questions, random = Math.random) {
       else if (match < 0.4) no += weights[i]
     })
     const decided = yes + no
-    const info = decided === 0 ? 0 : entropy(yes / decided) * decided
+    let share = decided === 0 ? 0 : yes / decided
+    if (canPullMore(game, question)) {
+      let floor = NARROW_SHARE_FLOOR
+      if (question.tier <= 2) floor = BROAD_SHARE_FLOOR
+      else if (question.tier === 3 || parent) floor = SHARE_FLOOR
+      share = Math.max(share, floor)
+    }
+    const info = entropy(share) * decided
     if (info < MIN_INFO) continue
 
-    const bonus = question.follows ? FOLLOW_UP_BONUS : 0
-    options.push({ question, ref, value: info - TIER_PENALTY * (question.tier - 1) + bonus })
+    // A follow-up counts as one step narrower than its parent, not its own tier
+    const tier = parent ? Math.min(question.tier, tierOf[parent.id] + 1) : question.tier
+    const bonus = parent ? (fresh ? FRESH_FOLLOW_UP_BONUS : FOLLOW_UP_BONUS) : 0
+    const value = info - TIER_PENALTY * Math.abs(tier - target) + bonus
+    options.push({ question, ref, value })
   }
   if (options.length === 0) return null
 
@@ -181,11 +247,7 @@ export function nextQuestion(game, questions, random = Math.random) {
   const topValue = Math.max(...options.map((o) => o.value))
   const closeOnes = options.filter((o) => o.value >= topValue - CLOSE_ENOUGH)
   const best = closeOnes[Math.floor(random() * closeOnes.length)]
-
-  const text = best.ref
-    ? best.question.text.replace('[movie]', `${best.ref.title} (${releaseYear(best.ref)})`)
-    : best.question.text
-  return { question: best.question, ref: best.ref, text }
+  return withText(best.question, best.ref)
 }
 
 // ---------------------------------------------------------------------------
@@ -240,6 +302,13 @@ function applyLikeMovie(game, ref, answerValue, recommendations) {
     const before = boosts[movie.id]?.amount ?? 0
     boosts[movie.id] = { amount: before + answerValue * RECOMMENDED_BOOST, because: ref.title }
   }
+  // You probably want something *like* the [movie], not the movie itself.
+  // It's not removed though: if it's still the best fit, it can win, and
+  // "Already seen it" on the result screen covers the rest.
+  boosts[ref.id] = {
+    amount: (boosts[ref.id]?.amount ?? 0) - REFERENCE_PENALTY,
+    because: ref.title,
+  }
 
   // On a yes, TMDB's recommendations join the pool
   const withRecs = answerValue > 0 ? addMovies(game, recommendations) : game
@@ -247,8 +316,6 @@ function applyLikeMovie(game, ref, answerValue, recommendations) {
     ...withRecs,
     profile: addToProfile(game.profile, genreTraits, answerValue),
     boosts,
-    // Never recommend the reference movie itself
-    excludedIds: [...game.excludedIds, ref.id],
   }
 }
 
