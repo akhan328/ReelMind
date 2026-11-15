@@ -20,6 +20,23 @@ function App() {
   const [current, setCurrent] = useState(null) // { question, ref, text }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // Screens you can go Back to: [{ phase, game, current }], newest last
+  const [history, setHistory] = useState([])
+
+  // Remember the screen you're on before moving away from it
+  function remember(screen = { phase, game, current }) {
+    setHistory((past) => [...past, screen])
+  }
+
+  // Back: return to the previous screen exactly as it was
+  function goBack() {
+    const previous = history.at(-1)
+    if (!previous || busy) return
+    setHistory(history.slice(0, -1))
+    setGame(previous.game)
+    setCurrent(previous.current)
+    setPhase(previous.phase)
+  }
 
   // Save the new game state, then either ask another question or show the result
   function advance(nextGame) {
@@ -40,12 +57,14 @@ function App() {
     setCurrent(null)
     setBusy(false)
     setError('')
+    setHistory([])
   }
 
   async function startGame() {
     const thisSession = ++session.current
     setPhase('loading')
     setError('')
+    setHistory([])
     try {
       const newGame = await startNewGame()
       if (session.current === thisSession) advance(newGame)
@@ -58,15 +77,18 @@ function App() {
 
   async function handleAnswer(value) {
     const thisSession = session.current
+    const screenBefore = { phase, game, current }
     setBusy(true)
     const nextGame = await answerQuestion(game, current, value)
     if (session.current !== thisSession) return
+    remember(screenBefore)
     advance(nextGame)
     setBusy(false)
   }
 
   // Show the best pick so far without answering more questions
   function stopNow() {
+    remember()
     setCurrent(null)
     setPhase('result')
   }
@@ -76,6 +98,7 @@ function App() {
     const extended = keepGoing(game)
     const question = nextQuestion(extended, questions)
     if (!question) return
+    remember()
     setGame(extended)
     setCurrent(question)
     setPhase('question')
@@ -124,6 +147,8 @@ function App() {
             onAnswer={handleAnswer}
             canStop={game.asked.length > 0}
             onStop={stopNow}
+            canGoBack={history.length > 0}
+            onBack={goBack}
           />
         )}
 
@@ -134,6 +159,8 @@ function App() {
             onRestart={startGame}
             canContinue={canKeepGoing(game, questions)}
             onContinue={continueGame}
+            canGoBack={history.length > 0}
+            onBack={goBack}
           />
         )}
       </main>

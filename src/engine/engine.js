@@ -41,6 +41,8 @@ const SIMILAR_WEIGHT = 0.6 // "like [movie]": weight per genre that movie has
 const RECOMMENDED_BOOST = 1 // "like [movie]": bonus for TMDB's recommendations
 const REFERENCE_PENALTY = 1 // "like [movie]": the [movie] itself drops a bit, so similar movies rank above it
 const MIN_REF_VOTES = 2000 // [movie] has to be well known enough to recognize
+const TRAIT_CAP = 2 // no trait's weight goes past ±2, so overlapping questions can't pile up on one thing
+const TIE_MARGIN = 0.5 // top picks within this score of #1 count as equally good fits
 
 // Release-date ranges used when pulling more movies for an era answer
 const ERA_DATES = {
@@ -59,7 +61,7 @@ export function newGame(movies) {
     pool: addTraits(movies),
     profile: {}, // trait -> weight
     hardFilters: [], // [{ trait, wanted }]
-    excludedIds: [], // already seen, or used as a [movie] reference
+    excludedIds: [], // marked "Already seen it" on the current result screen (never saved)
     boosts: {}, // movieId -> { amount, because }
     asked: [], // [{ id, text, ref, answer }]
     askCounts: {}, // questionId -> times asked
@@ -97,6 +99,14 @@ export function rankMovies(game) {
   return candidates(game)
     .map((movie) => ({ movie, score: scoreMovie(game, movie) }))
     .sort((a, b) => b.score + 0.1 * quality(b.movie) - (a.score + 0.1 * quality(a.movie)))
+}
+
+// The best picks from a ranking: just #1 if it's clearly ahead, or up to
+// `max` movies when they're about equally good fits
+export function topPicks(ranked, max = 3) {
+  if (ranked.length === 0) return []
+  const best = ranked[0].score
+  return ranked.slice(0, max).filter((r) => best - r.score <= TIE_MARGIN)
 }
 
 // Turns scores into weights that add up to 1 (higher score = much more weight)
@@ -263,7 +273,8 @@ export function nextQuestion(game, questions, random = Math.random) {
 function addToProfile(profile, traits, amount) {
   const next = { ...profile }
   for (const [trait, weight] of Object.entries(traits)) {
-    next[trait] = (next[trait] ?? 0) + amount * weight
+    const total = (next[trait] ?? 0) + amount * weight
+    next[trait] = Math.max(-TRAIT_CAP, Math.min(TRAIT_CAP, total))
   }
   return next
 }

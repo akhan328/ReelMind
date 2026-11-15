@@ -17,6 +17,8 @@ export default function QuestionScreen({
   onAnswer,
   canStop,
   onStop,
+  canGoBack,
+  onBack,
 }) {
   return (
     <>
@@ -38,10 +40,19 @@ export default function QuestionScreen({
         ))}
       </div>
 
-      {canStop && (
-        <button type="button" className="text-button" disabled={busy} onClick={onStop}>
-          Stop and show my pick
-        </button>
+      {(canGoBack || canStop) && (
+        <div className="screen-links">
+          {canGoBack && (
+            <button type="button" className="text-button" disabled={busy} onClick={onBack}>
+              ← Back
+            </button>
+          )}
+          {canStop && (
+            <button type="button" className="text-button" disabled={busy} onClick={onStop}>
+              Stop and show my pick
+            </button>
+          )}
+        </div>
       )}
     </>
   )

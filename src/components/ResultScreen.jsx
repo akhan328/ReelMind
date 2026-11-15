@@ -1,12 +1,37 @@
 import { useState } from 'react'
-import { posterUrl } from '../api/tmdb.js'
-import { explainPick, rankMovies } from '../engine/engine.js'
-import { GENRES, releaseYear } from '../engine/traits.js'
+import { explainPick, rankMovies, topPicks } from '../engine/engine.js'
+import { releaseYear } from '../engine/traits.js'
 import Bubble from './Bubble.jsx'
+import MovieCard from './MovieCard.jsx'
 
-export default function ResultScreen({ game, onSeen, onRestart, canContinue, onContinue }) {
-  const [happy, setHappy] = useState(false)
+export default function ResultScreen({
+  game,
+  onSeen,
+  onRestart,
+  canContinue,
+  onContinue,
+  canGoBack,
+  onBack,
+}) {
+  const [chosen, setChosen] = useState(null)
   const ranked = rankMovies(game)
+
+  const backLink = canGoBack && (
+    <button type="button" className="text-button" onClick={onBack}>
+      ← Back
+    </button>
+  )
+
+  if (chosen) {
+    return (
+      <section className="result">
+        <p className="enjoy">Enjoy {chosen.title}! 🍿</p>
+        <button type="button" className="primary-button" onClick={onRestart}>
+          Play again
+        </button>
+      </section>
+    )
+  }
 
   if (ranked.length === 0) {
     return (
@@ -15,93 +40,80 @@ export default function ResultScreen({ game, onSeen, onRestart, canContinue, onC
         <button type="button" className="primary-button" onClick={onRestart}>
           Play again
         </button>
+        {backLink}
       </>
     )
   }
 
-  const [{ movie }, ...rest] = ranked
-  const reasons = explainPick(game, movie)
-  const poster = posterUrl(movie.poster_path)
-  const genres = movie.genre_ids.map((id) => GENRES[id]).join(', ')
-  const runtime = movie.details?.runtime
-  const meta = [
-    `★ ${movie.vote_average.toFixed(1)} (${movie.vote_count.toLocaleString()} votes)`,
-    movie.details?.certification,
-    runtime && `${Math.floor(runtime / 60)}h ${runtime % 60}m`,
-    genres,
-  ].filter(Boolean)
+  // One clear winner, or a close call between up to 3 movies
+  const picks = topPicks(ranked)
+  const closeCall = picks.length > 1
+  const others = ranked.slice(picks.length, picks.length + 3)
 
   return (
     <section className="result">
-      <p className="result-intro">I think you should watch…</p>
+      <p className="result-intro">
+        {closeCall
+          ? "It's a close call. Any of these should be a good fit:"
+          : 'I think you should watch…'}
+      </p>
 
-      <article className="result-card">
-        {poster ? (
-          <img className="poster" src={poster} alt={`Poster for ${movie.title}`} />
-        ) : (
-          <div className="poster poster-missing">No poster</div>
-        )}
-
-        <div className="result-info">
-          <h2 className="result-title">
-            {movie.title} <span className="result-year">({releaseYear(movie)})</span>
-          </h2>
-          <p className="result-meta">{meta.join(' · ')}</p>
-          <p className="result-overview">{movie.overview}</p>
-
-          {reasons.length > 0 && (
-            <div className="reasons">
-              <p className="reasons-title">Why this movie</p>
-              <ul className="reason-list">
-                {reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
+      {picks.map(({ movie }) => (
+        <MovieCard
+          key={movie.id}
+          movie={movie}
+          reasons={explainPick(game, movie)}
+          compact={closeCall}
+        >
+          {closeCall && (
+            <div className="card-actions">
+              <button type="button" className="small-button" onClick={() => setChosen(movie)}>
+                This one!
+              </button>
+              <button type="button" className="small-button" onClick={() => onSeen(movie.id)}>
+                Seen it
+              </button>
             </div>
           )}
+        </MovieCard>
+      ))}
 
-          <a
-            className="tmdb-link"
-            href={`https://www.themoviedb.org/movie/${movie.id}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on TMDB →
-          </a>
-        </div>
-      </article>
-
-      {happy ? (
-        <>
-          <p className="enjoy">Enjoy the movie! 🍿</p>
-          <button type="button" className="primary-button" onClick={onRestart}>
-            Play again
-          </button>
-        </>
-      ) : (
-        <div className="result-actions">
-          <button type="button" className="answer-button" onClick={() => setHappy(true)}>
-            Sounds good!
-          </button>
-          <button type="button" className="answer-button" onClick={() => onSeen(movie.id)}>
-            Already seen it
-          </button>
-          {canContinue && (
-            <button type="button" className="answer-button" onClick={onContinue}>
-              Keep narrowing it down
+      <div className="result-actions">
+        {!closeCall && (
+          <>
+            <button
+              type="button"
+              className="answer-button"
+              onClick={() => setChosen(picks[0].movie)}
+            >
+              Sounds good!
             </button>
-          )}
-          <button type="button" className="answer-button" onClick={onRestart}>
-            Play again
+            <button
+              type="button"
+              className="answer-button"
+              onClick={() => onSeen(picks[0].movie.id)}
+            >
+              Already seen it
+            </button>
+          </>
+        )}
+        {canContinue && (
+          <button type="button" className="answer-button" onClick={onContinue}>
+            Keep narrowing it down
           </button>
-        </div>
-      )}
+        )}
+        <button type="button" className="answer-button" onClick={onRestart}>
+          Play again
+        </button>
+      </div>
 
-      {rest.length > 0 && (
+      {backLink}
+
+      {others.length > 0 && (
         <div className="runner-ups">
           <p className="reasons-title">Also a good fit</p>
           <ul>
-            {rest.slice(0, 3).map(({ movie: other }) => (
+            {others.map(({ movie: other }) => (
               <li key={other.id}>
                 {other.title} ({releaseYear(other)})
               </li>
