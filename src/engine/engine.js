@@ -15,6 +15,7 @@ import {
   releaseYear,
   themeKeywordIds,
   traitLabel,
+  trendingCutoffFor,
 } from './traits.js'
 
 const MAX_QUESTIONS = 15
@@ -43,6 +44,8 @@ const REFERENCE_PENALTY = 1 // "like [movie]": the [movie] itself drops a bit, s
 const MIN_REF_VOTES = 2000 // [movie] has to be well known enough to recognize
 const TRAIT_CAP = 2 // no trait's weight goes past ±2, so overlapping questions can't pile up on one thing
 const TIE_MARGIN = 0.5 // top picks within this score of #1 count as equally good fits
+const STRONG_ANSWER = 1 // a profile weight this big (a full Yes/No) shapes the movie searches
+const MAX_EXTRA_GENRES = 2 // liked genres added to a search on top of the current answer
 
 // Release-date ranges used when pulling more movies for an era answer
 const ERA_DATES = {
@@ -57,8 +60,10 @@ const ERA_DATES = {
 }
 
 export function newGame(movies) {
+  const trendingCutoff = trendingCutoffFor(movies)
   return {
-    pool: addTraits(movies),
+    pool: addTraits(movies, trendingCutoff),
+    trendingCutoff, // popularity needed for "trending now", fixed for the whole game
     profile: {}, // trait -> weight
     hardFilters: [], // [{ trait, wanted }]
     excludedIds: [], // marked "Already seen it" on the current result screen (never saved)
@@ -344,8 +349,21 @@ export function excludeMovie(game, movieId) {
 // ---------------------------------------------------------------------------
 // Pulling more movies live
 
-// After a Yes / Probably, a TMDB search for more movies like that answer
-// (respecting the hard filters so far). Returns null if there's nothing to search.
+// Ids behind the profile's strong preferences for one kind of trait, strongest
+// first, e.g. strongIds(profile, 'genre:', (w) => w >= 1) -> ['27', '878']
+function strongIds(profile, prefix, test) {
+  return Object.entries(profile)
+    .filter(([trait, weight]) => trait.startsWith(prefix) && test(weight))
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .map(([trait]) => trait.slice(prefix.length))
+}
+
+// After a Yes / Probably, a TMDB search for more movies like that answer.
+// Returns { params, fallback, hints } or null if there's nothing to search:
+//   params    the sharpest search: this answer + hard filters + your strong
+//             answers so far (e.g. horror + after 2015 + zombies)
+//   fallback  the plain search (this answer + hard filters), used if the
+//             sharp one finds too little. null if they're the same.
 export function refillQuery(game, question, answerValue) {
   if (answerValue <= 0 || !question.traits) return null
 
@@ -396,16 +414,46 @@ export function refillQuery(game, question, answerValue) {
   // TMDB can't search for "any language except English". Without a specific
   // language the results would mostly be English movies that get filtered out.
   if (anyForeign && !language) return null
+  // TMDB can't mix "all of these genres" (,) and "any of these" (|) in one search
+  if (anyGenre && genres.size > 0) return null
 
-  if (anyGenre) {
-    // TMDB can't mix "all of these genres" (,) and "any of these" (|) in one search
-    if (genres.size > 0) return null
-    params.with_genres = anyGenre.join('|')
-  } else if (genres.size > 0) {
-    params.with_genres = [...genres].join(',')
+  // The plain search: this answer + the hard filters
+  const basic = { ...params }
+  if (anyGenre) basic.with_genres = anyGenre.join('|')
+  else if (genres.size > 0) basic.with_genres = [...genres].join(',')
+  if (language) basic.with_original_language = language
+
+  // 3. The sharper search: also use your strong answers so far
+  const sharp = { ...basic }
+  const liked = strongIds(game.profile, 'genre:', (w) => w >= STRONG_ANSWER)
+    .filter((id) => !genres.has(id))
+    .slice(0, MAX_EXTRA_GENRES)
+  if (!anyGenre && liked.length > 0) sharp.with_genres = [...genres, ...liked].join(',')
+  const disliked = strongIds(game.profile, 'genre:', (w) => w <= -STRONG_ANSWER).filter(
+    (id) => !genres.has(id) && !anyGenre?.includes(Number(id)),
+  )
+  if (disliked.length > 0) sharp.without_genres = disliked.join('|')
+
+  const answerIsEra = Boolean(ERA_DATES[trait])
+  if (!answerIsEra) {
+    const [era] = strongIds(game.profile, 'era:', (w) => w >= STRONG_ANSWER)
+    if (ERA_DATES[`era:${era}`]) {
+      const [from, to] = ERA_DATES[`era:${era}`]
+      if (from) sharp['primary_release_date.gte'] = from
+      if (to) sharp['primary_release_date.lte'] = to
+    } else {
+      // No era you wanted, but maybe ones you ruled out
+      if ((game.profile['era:recent'] ?? 0) <= -STRONG_ANSWER) {
+        sharp['primary_release_date.lte'] = '2014-12-31'
+      }
+      if ((game.profile['era:classic'] ?? 0) <= -STRONG_ANSWER) {
+        sharp['primary_release_date.gte'] = '1990-01-01'
+      }
+    }
   }
-  if (language) params.with_original_language = language
-  return { params, hints }
+
+  const isSharper = JSON.stringify(sharp) !== JSON.stringify(basic)
+  return { params: sharp, fallback: isSharper ? basic : null, hints }
 }
 
 // Adds new movies to the pool. `hints` are traits we already know about them.
@@ -417,8 +465,10 @@ export function addMovies(game, movies, hints = {}) {
       : movie,
   )
   const known = new Set(game.pool.map((movie) => movie.id))
-  const fresh = movies.filter((movie) => !known.has(movie.id)).map((movie) => ({ ...movie, hints }))
-  return { ...game, pool: addTraits([...pool, ...fresh]) }
+  const fresh = [...found.values()]
+    .filter((movie) => !known.has(movie.id))
+    .map((movie) => ({ ...movie, hints }))
+  return { ...game, pool: addTraits([...pool, ...fresh], game.trendingCutoff) }
 }
 
 // Ids of top-ranked movies that still need the details call
@@ -433,7 +483,7 @@ export function attachDetails(game, detailsById) {
   const pool = game.pool.map((movie) =>
     detailsById[movie.id] ? { ...movie, details: detailsById[movie.id] } : movie,
   )
-  return { ...game, pool: addTraits(pool), detailsLoaded: true }
+  return { ...game, pool: addTraits(pool, game.trendingCutoff), detailsLoaded: true }
 }
 
 // ---------------------------------------------------------------------------

@@ -19,16 +19,21 @@ const POOL_MIX = [
     pages: 3,
     fromFirst: 8,
   },
-  // Highly rated but fewer votes: hidden gems
+  // Well-rated movies fewer people have seen: hidden gems. Sorted by vote count
+  // within the range so they're watchable (not concert films or 1950s
+  // arthouse), from 1980 up to 2 years ago (brand-new releases have
+  // inflated early ratings).
   {
     params: {
-      sort_by: 'vote_average.desc',
+      sort_by: 'vote_count.desc',
       'vote_average.gte': 7,
-      'vote_count.gte': 150,
-      'vote_count.lte': 1500,
+      'vote_count.gte': 300,
+      'vote_count.lte': 2000,
+      'primary_release_date.gte': '1980-01-01',
+      'primary_release_date.lte': `${new Date().getFullYear() - 2}-12-31`,
     },
     pages: 3,
-    fromFirst: 10,
+    fromFirst: 20,
   },
 ]
 
@@ -150,10 +155,18 @@ export async function fetchStartingPool() {
 }
 
 // Extra movies matching a narrower search, e.g. { with_keywords: '12377' } for zombies.
-// Sorted by vote count so the best-known matches come first.
-export async function fetchMoreMovies(params, pages = 2) {
-  const requests = Array.from({ length: pages }, (_, i) =>
-    discover({ sort_by: 'vote_count.desc', 'vote_count.gte': 100, ...params }, i + 1),
+// Sorted by vote count: page 1 has the best-known matches, plus one random
+// page from 2-5 so the same search doesn't always bring back the same movies.
+// (A random page past the end of the results just comes back empty.)
+// Rated 6+ only: deeper pages otherwise bring in poorly liked movies that can
+// end up as the pick (testing turned up a 4.8-rated one).
+export async function fetchMoreMovies(params) {
+  const extraPage = 2 + Math.floor(Math.random() * 4)
+  const requests = [1, extraPage].map((page) =>
+    discover(
+      { sort_by: 'vote_count.desc', 'vote_count.gte': 100, 'vote_average.gte': 6, ...params },
+      page,
+    ),
   )
   const responses = await Promise.all(requests)
   return uniqueUsable(responses.flatMap((response) => response.results))

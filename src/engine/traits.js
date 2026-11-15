@@ -107,10 +107,23 @@ export function releaseYear(movie) {
   return Number(movie.release_date?.slice(0, 4)) || null
 }
 
-function movieTraits(movie, { votePercentile, popularityPercentile }) {
+// Public-perception cutoffs, in TMDB votes. Fixed numbers rather than "compared
+// to the pool", so a movie's labels can't change mid-game as more movies get
+// pulled in.
+const BIG_HIT_VOTES = 15_000 // "big well-known hit"
+const KNOWN_VOTES = 7_000 // halfway to a big hit
+const HIDDEN_GEM_MAX_VOTES = 2_000 // plus a 7+ rating, and 2+ years old (new releases
+// have few votes because they're new, not because they're hidden)
+const CULT_MIN_VOTES = 1_000 // cult classic: 2005 or older, 7+ rating,
+const CULT_MAX_VOTES = 16_000 // ...known but not mainstream
+const GUILTY_PLEASURE_MIN_VOTES = 5_000 // plus a rating under 6.5
+const TRENDING_PERCENTILE = 0.8 // top 20% by current popularity at game start
+
+function movieTraits(movie, trendingCutoff) {
   const traits = {}
   const year = releaseYear(movie) ?? 0
   const rating = movie.vote_average
+  const votes = movie.vote_count
 
   // Genres and tone
   for (const id of Object.keys(GENRES)) {
@@ -127,23 +140,29 @@ function movieTraits(movie, { votePercentile, popularityPercentile }) {
     traits[`era:${decade}`] = year >= from && year <= to ? 1 : 0
   }
 
-  // Public perception (vote counts and popularity are relative to the pool)
-  if (rating >= 7.5 && movie.vote_count >= 1000) traits['perception:acclaimed'] = 1
+  // Public perception
+  if (rating >= 7.5 && votes >= 1000) traits['perception:acclaimed'] = 1
   else if (rating >= 7) traits['perception:acclaimed'] = 0.5
   else traits['perception:acclaimed'] = 0
 
-  if (votePercentile >= 0.75) traits['perception:bigHit'] = 1
-  else if (votePercentile >= 0.5) traits['perception:bigHit'] = 0.5
+  if (votes >= BIG_HIT_VOTES) traits['perception:bigHit'] = 1
+  else if (votes >= KNOWN_VOTES) traits['perception:bigHit'] = 0.5
   else traits['perception:bigHit'] = 0
 
-  traits['perception:hiddenGem'] = rating >= 7 && votePercentile <= 0.35 ? 1 : 0
+  traits['perception:hiddenGem'] =
+    rating >= 7 && votes <= HIDDEN_GEM_MAX_VOTES && year > 0 && year <= THIS_YEAR - 2 ? 1 : 0
   traits['perception:cult'] =
-    year > 0 && year <= 2005 && rating >= 7 && votePercentile >= 0.15 && votePercentile <= 0.7
+    year > 0 &&
+    year <= 2005 &&
+    rating >= 7 &&
+    votes >= CULT_MIN_VOTES &&
+    votes <= CULT_MAX_VOTES
       ? 1
       : 0
-  traits['perception:guiltyPleasure'] = votePercentile >= 0.4 && rating < 6.5 ? 1 : 0
+  traits['perception:guiltyPleasure'] =
+    votes >= GUILTY_PLEASURE_MIN_VOTES && rating < 6.5 ? 1 : 0
   traits['perception:trending'] =
-    popularityPercentile >= 0.8 || year >= THIS_YEAR - 1 ? 1 : 0
+    (movie.popularity ?? 0) >= trendingCutoff || year >= THIS_YEAR - 1 ? 1 : 0
 
   // Language and format
   traits['lang:foreign'] = movie.original_language === 'en' ? 0 : 1
@@ -186,22 +205,17 @@ function movieTraits(movie, { votePercentile, popularityPercentile }) {
   return traits
 }
 
-function percentileOf(values) {
-  const sorted = [...values].sort((a, b) => a - b)
-  return (value) =>
-    sorted.length > 1 ? sorted.findIndex((v) => v >= value) / (sorted.length - 1) : 0.5
+// The popularity a movie needs to count as "trending now": the top 20% of the
+// starting pool. Worked out once per game (TMDB's popularity scale drifts over
+// time, so a fixed number wouldn't stay right) and then kept for the game.
+export function trendingCutoffFor(movies) {
+  const sorted = movies.map((m) => m.popularity ?? 0).sort((a, b) => a - b)
+  if (sorted.length === 0) return Infinity
+  return sorted[Math.floor(TRENDING_PERCENTILE * (sorted.length - 1))]
 }
 
-// Adds a `traits` object to every movie. Run it again whenever the pool
-// changes, because "big hit" / "hidden gem" depend on the whole pool.
-export function addTraits(movies) {
-  const voteRank = percentileOf(movies.map((m) => m.vote_count))
-  const popularityRank = percentileOf(movies.map((m) => m.popularity ?? 0))
-  return movies.map((movie) => ({
-    ...movie,
-    traits: movieTraits(movie, {
-      votePercentile: voteRank(movie.vote_count),
-      popularityPercentile: popularityRank(movie.popularity ?? 0),
-    }),
-  }))
+// Adds a `traits` object to every movie. Run it again when a movie gets its
+// details or hints, so those traits fill in.
+export function addTraits(movies, trendingCutoff = trendingCutoffFor(movies)) {
+  return movies.map((movie) => ({ ...movie, traits: movieTraits(movie, trendingCutoff) }))
 }

@@ -20,6 +20,7 @@ import {
 
 const DETAILS_AFTER = 2 // start using keyword / runtime / age-rating data after this many answers
 const DETAILS_FOR_TOP = 80 // how many of the top-ranked movies need details
+const ENOUGH_NEW_MOVIES = 15 // if the sharp search finds fewer, also run the plain one
 
 async function orFallback(promise, fallback) {
   try {
@@ -48,7 +49,10 @@ export async function answerQuestion(game, current, answerValue) {
   // A yes to something specific: pull more movies that match it
   const refill = refillQuery(next, question, answerValue)
   if (refill) {
-    const more = await orFallback(fetchMoreMovies(refill.params), [])
+    let more = await orFallback(fetchMoreMovies(refill.params), [])
+    if (more.length < ENOUGH_NEW_MOVIES && refill.fallback) {
+      more = [...more, ...(await orFallback(fetchMoreMovies(refill.fallback), []))]
+    }
     next = addMovies(next, more, refill.hints)
   }
 
