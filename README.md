@@ -69,34 +69,6 @@ src/
 
 The settings that control the algorithm (question limits, how picky it is, and so on) are at the top of `src/engine/engine.js`.
 
-## Adding questions
-
-Questions live in `src/data/questions.json`. Adding one doesn't need any code:
-
-```json
-{
-  "id": "zombies",
-  "tier": 4,
-  "follows": ["scared", "action"],
-  "text": "Do you want zombies?",
-  "traits": { "theme:zombie": 1 }
-}
-```
-
-| Field | Meaning |
-|---|---|
-| `id` | Unique name for the question |
-| `tier` | 1 (broad) to 5 (narrowest). Higher tiers only open after a few questions. |
-| `text` | What the user sees |
-| `traits` | What a Yes means, with a weight for each trait. Negative weights mean "less of this". |
-| `follows` | Optional. Only ask after a Yes or Probably to one of these question ids. |
-| `hard` | Optional. A plain Yes or No removes movies that don't match (used for animated and language questions). |
-| `fill` / `repeat` | Used by the "like [movie]" question, which fills in a real movie title. |
-
-Trait names look like `genre:35` (TMDB genre id), `era:90s`, `tone:light`, `perception:hiddenGem`, `lang:ko`, `length:short`, `rating:adult` or `theme:heist`. The full list is in `src/engine/traits.js`.
-
-To add a new theme, add an entry to `src/data/themes.json` with a label and its TMDB keyword ids. You can find keyword ids with TMDB's `/search/keyword` endpoint, or on a keyword's page on themoviedb.org.
-
 ## Credits
 
 This product uses the TMDB API but is not endorsed or certified by TMDB. Movie data and posters come from [themoviedb.org](https://www.themoviedb.org/).

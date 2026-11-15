@@ -38,6 +38,7 @@ const FOLLOW_UP_BONUS = 0.1 // follow-up whose parent got a Yes at some point
 const FRESH_FOLLOW_UP_BONUS = 0.3 // ...or within the last FRESH_WINDOW questions
 const FRESH_WINDOW = 2
 const CLOSE_ENOUGH = 0.2 // pick randomly among questions this close to the best
+const DONT_KNOW_PENALTY = 0.35 // per extra "Don't know" to one kind of question (era, length...)
 const SIMILAR_WEIGHT = 0.6 // "like [movie]": weight per genre that movie has
 const RECOMMENDED_BOOST = 1 // "like [movie]": bonus for TMDB's recommendations
 const REFERENCE_PENALTY = 1 // "like [movie]": the [movie] itself drops a bit, so similar movies rank above it
@@ -161,15 +162,39 @@ function needsDetails(question) {
   return Object.keys(question.traits ?? {}).some(isDetailTrait)
 }
 
-// Follow-ups need a Yes / Probably to at least one parent question.
-// Returns the most recent such parent and how many questions ago it was.
-function latestYesParent(game, question) {
+// Follow-ups need the right answer to at least one parent question:
+//   "recent"   a Yes / Probably to "recent"
+//   "!recent"  a No / Probably not to "recent" (e.g. "2000s?" after "recent? No")
+// Returns the most recent matching parent and how many questions ago it was.
+function latestParent(game, question) {
   if (!question.follows) return null
   for (let i = game.asked.length - 1; i >= 0; i--) {
     const { id, answer } = game.asked[i]
-    if (question.follows.includes(id) && answer > 0) return { id, ago: game.asked.length - i }
+    const matches =
+      (answer > 0 && question.follows.includes(id)) ||
+      (answer < 0 && question.follows.includes(`!${id}`))
+    if (matches) return { id, ago: game.asked.length - i }
   }
   return null
+}
+
+// Kinds of question people often have no opinion on. After two "Don't know"
+// answers to one kind, the rest of that kind get held back.
+const OPINION_KINDS = ['era', 'perception', 'length', 'rating', 'budget', 'franchise']
+
+function kindOf(question) {
+  const kind = (mainTrait(question) ?? '').split(':')[0]
+  return OPINION_KINDS.includes(kind) ? kind : null
+}
+
+function dontKnowsByKind(game, questions) {
+  const byId = Object.fromEntries(questions.map((q) => [q.id, q]))
+  const counts = {}
+  for (const { id, answer } of game.asked) {
+    const kind = byId[id] && kindOf(byId[id])
+    if (answer === 0 && kind) counts[kind] = (counts[kind] ?? 0) + 1
+  }
+  return counts
 }
 
 // A well-known movie from near the top of the current ranking. Skips the top
@@ -221,11 +246,12 @@ export function nextQuestion(game, questions, random = Math.random) {
   const weights = softmax(ranked.map((r) => r.score))
   const target = targetTier(game)
   const tierOf = Object.fromEntries(questions.map((q) => [q.id, q.tier]))
+  const dontKnows = dontKnowsByKind(game, questions)
 
   const options = []
   for (const question of questions) {
     if ((game.askCounts[question.id] ?? 0) >= (question.repeat ?? 1)) continue
-    const parent = latestYesParent(game, question)
+    const parent = latestParent(game, question)
     if (question.follows && !parent) continue
     const fresh = parent !== null && parent.ago <= FRESH_WINDOW
     if (needsDetails(question) && !game.detailsLoaded) continue
@@ -260,7 +286,10 @@ export function nextQuestion(game, questions, random = Math.random) {
     // A follow-up counts as one step narrower than its parent, not its own tier
     const tier = parent ? Math.min(question.tier, tierOf[parent.id] + 1) : question.tier
     const bonus = parent ? (fresh ? FRESH_FOLLOW_UP_BONUS : FOLLOW_UP_BONUS) : 0
-    const value = info - TIER_PENALTY * Math.abs(tier - target) + bonus
+    // Two or more "Don't know" answers to this kind of question: hold it back
+    const shrugs = dontKnows[kindOf(question)] ?? 0
+    const holdBack = shrugs >= 2 ? DONT_KNOW_PENALTY * (shrugs - 1) : 0
+    const value = info - TIER_PENALTY * Math.abs(tier - target) + bonus - holdBack
     options.push({ question, ref, value })
   }
   if (options.length === 0) return null

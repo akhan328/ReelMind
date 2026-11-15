@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { posterUrl } from '../api/tmdb.js'
 import { explainPick, rankMovies, topPicks } from '../engine/engine.js'
 import { releaseYear } from '../engine/traits.js'
 import Bubble from './Bubble.jsx'
@@ -52,11 +53,7 @@ export default function ResultScreen({
 
   return (
     <section className="result">
-      <p className="result-intro">
-        {closeCall
-          ? "It's a close call. Any of these should be a good fit:"
-          : 'I think you should watch…'}
-      </p>
+      <p className="result-intro">{closeCall ? 'Your best matches:' : 'I think you should watch…'}</p>
 
       {picks.map(({ movie }) => (
         <MovieCard
@@ -112,12 +109,34 @@ export default function ResultScreen({
       {others.length > 0 && (
         <div className="runner-ups">
           <p className="reasons-title">Also a good fit</p>
-          <ul>
-            {others.map(({ movie: other }) => (
-              <li key={other.id}>
-                {other.title} ({releaseYear(other)})
-              </li>
-            ))}
+          <ul className="runner-up-list">
+            {others.map(({ movie: other }) => {
+              const thumb = posterUrl(other.poster_path, 'w154')
+              const [reason] = explainPick(game, other)
+              return (
+                <li key={other.id}>
+                  <a
+                    className="runner-up"
+                    href={`https://www.themoviedb.org/movie/${other.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {thumb ? (
+                      <img className="runner-up-poster" src={thumb} alt="" />
+                    ) : (
+                      <span className="runner-up-poster poster-missing" />
+                    )}
+                    <span className="runner-up-title">
+                      {other.title} <span className="runner-up-year">({releaseYear(other)})</span>
+                    </span>
+                    <span className="runner-up-meta">
+                      ★ {other.vote_average.toFixed(1)}
+                      {reason && ` · ${reason}`}
+                    </span>
+                  </a>
+                </li>
+              )
+            })}
           </ul>
         </div>
       )}
