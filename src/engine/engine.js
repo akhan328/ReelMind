@@ -8,7 +8,14 @@
 //    after a "yes" to their parent question.
 // 4. Stop when one movie is clearly ahead, few are left, or the limit is hit.
 
-import { addTraits, isDetailTrait, releaseYear, themeKeywordIds, traitLabel } from './traits.js'
+import {
+  GENRE_GROUPS,
+  addTraits,
+  isDetailTrait,
+  releaseYear,
+  themeKeywordIds,
+  traitLabel,
+} from './traits.js'
 
 const MAX_QUESTIONS = 15
 const MIN_QUESTIONS = 7 // don't guess before this, unless almost nothing is left
@@ -334,11 +341,14 @@ export function refillQuery(game, question, answerValue) {
   // 1. What this answer asks for
   const params = {}
   const hints = {}
-  const genres = new Set()
+  const genres = new Set() // movies must have ALL of these
+  let anyGenre = null // ...or, for a genre group, ANY of these
   let language = null
   const trait = mainTrait(question)
   if (trait.startsWith('genre:')) {
     genres.add(trait.slice('genre:'.length))
+  } else if (GENRE_GROUPS[trait]) {
+    anyGenre = GENRE_GROUPS[trait]
   } else if (trait.startsWith('theme:')) {
     params.with_keywords = themeKeywordIds(trait.slice('theme:'.length)).join('|')
     hints[trait] = 1
@@ -376,7 +386,13 @@ export function refillQuery(game, question, answerValue) {
   // language the results would mostly be English movies that get filtered out.
   if (anyForeign && !language) return null
 
-  if (genres.size > 0) params.with_genres = [...genres].join(',')
+  if (anyGenre) {
+    // TMDB can't mix "all of these genres" (,) and "any of these" (|) in one search
+    if (genres.size > 0) return null
+    params.with_genres = anyGenre.join('|')
+  } else if (genres.size > 0) {
+    params.with_genres = [...genres].join(',')
+  }
   if (language) params.with_original_language = language
   return { params, hints }
 }

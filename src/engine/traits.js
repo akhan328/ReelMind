@@ -28,6 +28,13 @@ export const GENRES = {
 
 const LANGUAGES = { ko: 'Korean', ja: 'Japanese', fr: 'French', es: 'Spanish', hi: 'Hindi' }
 
+// Genre groups: one trait that's 1 if a movie has ANY of these genres.
+// Used for "something different?", which opens up genres that are too rare
+// in the pool to be asked about on their own.
+export const GENRE_GROUPS = {
+  'group:different': [37, 10752, 10402, 36], // Western, War, Music, History
+}
+
 const DECADES = {
   '70s': [1970, 1979],
   '80s': [1980, 1989],
@@ -60,6 +67,7 @@ const LABELS = {
   'perception:trending': ['Trending now', 'Not trending'],
   'lang:foreign': ['Not in English', 'In English'],
   'format:anime': ['Anime', 'Not anime'],
+  'group:different': ['Western, war, music or history', 'No western, war, music or history'],
   'length:short': ['Under 100 minutes', 'Not too short'],
   'length:long': ['Long epic', 'Not too long'],
   'rating:adult': ['Rated R', 'Not rated R'],
@@ -144,6 +152,10 @@ function movieTraits(movie, { votePercentile, popularityPercentile }) {
   }
   traits['format:anime'] =
     movie.original_language === 'ja' && movie.genre_ids.includes(16) ? 1 : 0
+
+  for (const [group, ids] of Object.entries(GENRE_GROUPS)) {
+    traits[group] = movie.genre_ids.some((id) => ids.includes(id)) ? 1 : 0
+  }
 
   // From the details call. Unknown = 0.5, except themes: most movies don't
   // have any given theme, so unknown counts as "no" (0).
