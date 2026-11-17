@@ -1,8 +1,8 @@
 // Live calls to TMDB (themoviedb.org). Movies only, never TV.
-// The token comes from .env.local (VITE_TMDB_TOKEN), which is gitignored.
+// They go through this app's own server (server/api.js), which adds the token,
+// so the token never reaches the browser.
 
-const TOKEN = import.meta.env.VITE_TMDB_TOKEN
-const API_BASE = 'https://api.themoviedb.org/3'
+const API_BASE = '/api/tmdb'
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/'
 
 // Genres we never recommend for now: Documentary, TV Movie
@@ -49,33 +49,25 @@ export function posterUrl(path, size = 'w342') {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function tmdbGet(path, params = {}) {
-  if (!TOKEN) {
-    throw new Error(
-      'No TMDB token found. Add VITE_TMDB_TOKEN to .env.local, then restart npm run dev.',
-    )
-  }
-
-  const url = new URL(API_BASE + path)
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, String(value))
-  }
+  const query = new URLSearchParams(
+    Object.entries(params).map(([key, value]) => [key, String(value)]),
+  )
+  const url = `${API_BASE}${path}?${query}`
 
   for (let attempt = 0; ; attempt++) {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${TOKEN}`, accept: 'application/json' },
-    })
+    const response = await fetch(url, { headers: { accept: 'application/json' } })
     // Too many requests: wait a moment and try again
     if (response.status === 429 && attempt < 3) {
       await sleep((Number(response.headers.get('retry-after')) || 1) * 1000)
       continue
     }
-    if (response.status === 401) {
-      throw new Error(
-        'TMDB rejected the token. Make sure VITE_TMDB_TOKEN in .env.local is the long API Read Access Token.',
-      )
-    }
     if (!response.ok) {
-      throw new Error(`TMDB request failed (${response.status}): ${path}`)
+      // The server explains setup problems (no token, wrong token) in `error`
+      const reason = await response
+        .json()
+        .then((body) => body.error)
+        .catch(() => null)
+      throw new Error(reason ?? `TMDB request failed (${response.status}): ${path}`)
     }
     return response.json()
   }

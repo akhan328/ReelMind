@@ -175,7 +175,7 @@ a {
   border: 2px solid var(--accent);
 }
 
-.primary-button:hover {
+.primary-button:hover:not(:disabled) {
   background: #ffc933;
 }
 
@@ -396,6 +396,49 @@ a {
   margin: 0;
   font-size: 1.3rem;
   font-weight: 600;
+}
+
+.wide-button {
+  min-width: 200px;
+}
+
+/* Seerr: "Request it", or where the movie is on your server */
+.seerr {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.seerr-note,
+.seerr-error {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.seerr-note {
+  color: #c9bdf0;
+}
+
+.seerr-error {
+  color: #ffb3c1;
+}
+
+a.primary-button {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .runner-ups {

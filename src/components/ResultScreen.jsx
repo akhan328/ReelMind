@@ -4,6 +4,7 @@ import { explainPick, rankMovies, topPicks } from '../engine/engine.js'
 import { releaseYear } from '../engine/traits.js'
 import Bubble from './Bubble.jsx'
 import MovieCard from './MovieCard.jsx'
+import SeerrPanel from './SeerrPanel.jsx'
 
 export default function ResultScreen({
   game,
@@ -27,7 +28,8 @@ export default function ResultScreen({
     return (
       <section className="result">
         <p className="enjoy">Enjoy {chosen.title}! 🍿</p>
-        <button type="button" className="primary-button" onClick={onRestart}>
+        <SeerrPanel movie={chosen} />
+        <button type="button" className="answer-button wide-button" onClick={onRestart}>
           Play again
         </button>
       </section>
