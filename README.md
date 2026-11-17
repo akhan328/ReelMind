@@ -19,7 +19,8 @@ This is a personal hobby project and isn't hosted anywhere. It runs on your own 
 
 - **Stop and show my pick:** after your first answer, skip straight to a recommendation.
 - **Keep narrowing it down:** from the result screen, answer a few more questions to refine the pick.
-- **Already seen it:** shows the next-best movie instead.
+- **Already seen it:** shows the next-best movie instead. If you're playing as a profile, it's saved, and that movie is never suggested to you again.
+- **Profiles:** the switcher in the top right. Pick who's watching, or add a profile (just a name, no password). Open it to see your seen movies, and **Remove** any you marked by mistake. **Delete this profile** is at the bottom of that page (it asks first). **Guest** saves nothing. See [Profiles](#profiles).
 - **Behind the scenes:** a panel under the game showing the current top 5, your taste profile and any filters. Handy for testing.
 - Click **ReelMind** at the top to go back to the start.
 
@@ -53,18 +54,45 @@ If you change `.env.local` while the dev server is running, restart it.
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Check the code with oxlint |
 
+## Profiles
+
+Profiles are saved in `profiles.json` in the project folder. The app creates it when you add the first profile. It's in `.gitignore`, so your lists stay off GitHub.
+
+```json
+{
+  "profiles": [
+    {
+      "name": "Anan",
+      "created": "2026-11-17T21:30:00.000Z",
+      "seen": [
+        { "id": 603, "title": "The Matrix", "year": 1999, "poster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg", "seenAt": "2026-11-17T21:42:10.000Z" }
+      ]
+    }
+  ]
+}
+```
+
+- `id` is the TMDB movie id. It's the only field the app needs to skip a movie. The others are for the seen-movies screen.
+- You can edit the file by hand, for example to rename a profile. Do it while the app isn't running. If the file stops being valid JSON, the app says so and doesn't overwrite it.
+- The dev server saves the file, so profiles work with `npm run dev` and `npm run preview`. A plain static copy of `dist/` has no profile switcher.
+- The browser remembers which profile you played as last.
+
 ## Project layout
 
 ```
 src/
   App.jsx               screens and game state
   gameFlow.js           runs one turn: apply the answer, pull more movies, load details
+  useProfiles.js        who's playing, and their seen movies
   api/tmdb.js           all TMDB calls, request limiting, and the browser cache for details
+  api/profiles.js       reading and saving profiles
   engine/engine.js      the algorithm: scoring, picking questions, when to guess
   engine/traits.js      turns TMDB data into traits (genre, era, perception, themes...)
   data/questions.json   every question
   data/themes.json      themes and the TMDB keyword ids behind them
-  components/           question screen, result screen, behind-the-scenes panel
+  components/           question screen, result screen, profile switcher, seen movies, behind-the-scenes panel
+server/
+  profiles.js           the /api/profiles routes: reads and writes profiles.json
 ```
 
 The settings that control the algorithm (question limits, how picky it is, and so on) are at the top of `src/engine/engine.js`.

@@ -67,7 +67,7 @@ export default function ResultScreen({
               <button type="button" className="small-button" onClick={() => setChosen(movie)}>
                 This one!
               </button>
-              <button type="button" className="small-button" onClick={() => onSeen(movie.id)}>
+              <button type="button" className="small-button" onClick={() => onSeen(movie)}>
                 Seen it
               </button>
             </div>
@@ -88,7 +88,7 @@ export default function ResultScreen({
             <button
               type="button"
               className="answer-button"
-              onClick={() => onSeen(picks[0].movie.id)}
+              onClick={() => onSeen(picks[0].movie)}
             >
               Already seen it
             </button>

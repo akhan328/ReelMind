@@ -25,3 +25,7 @@ dist-ssr
 
 # Private planning notes
 pitch-and-features.txt
+
+# Profiles and the movies each one has seen (saved by the app)
+profiles.json
+profiles.json.tmp
