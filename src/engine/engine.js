@@ -68,7 +68,7 @@ export function newGame(movies) {
     trendingCutoff, // popularity needed for "trending now", fixed for the whole game
     profile: {}, // trait -> weight
     hardFilters: [], // [{ trait, wanted }]
-    excludedIds: [], // marked "Already seen it" on the current result screen (never saved)
+    excludedIds: [], // "Already seen it": this game's, plus the profile's saved ones
     boosts: {}, // movieId -> { amount, because }
     asked: [], // [{ id, text, ref, answer }]
     askCounts: {}, // questionId -> times asked
@@ -82,9 +82,10 @@ export function newGame(movies) {
 // Scoring
 
 export function candidates(game) {
+  const excluded = new Set(game.excludedIds)
   return game.pool.filter(
     (movie) =>
-      !game.excludedIds.includes(movie.id) &&
+      !excluded.has(movie.id) &&
       game.hardFilters.every((f) => movie.traits[f.trait] >= 0.5 === f.wanted),
   )
 }
@@ -393,8 +394,12 @@ function applyLikeMovie(game, ref, answerValue, recommendations) {
   }
 }
 
-export function excludeMovie(game, movieId) {
-  return { ...game, excludedIds: [...game.excludedIds, movieId] }
+// "Already seen it": these movies never come up again this game.
+// Returns the same game if they were all excluded already.
+export function excludeMovies(game, movieIds) {
+  const excluded = new Set(game.excludedIds)
+  const fresh = [...new Set(movieIds)].filter((id) => !excluded.has(id))
+  return fresh.length === 0 ? game : { ...game, excludedIds: [...game.excludedIds, ...fresh] }
 }
 
 // ---------------------------------------------------------------------------

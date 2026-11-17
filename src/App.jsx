@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import questions from './data/questions.json'
 import { answerQuestion, startNewGame } from './gameFlow.js'
+import { useProfiles } from './useProfiles.js'
 import {
   canKeepGoing,
-  excludeMovie,
+  excludeMovies,
   keepGoing,
   nextQuestion,
   shouldGuess,
@@ -12,16 +13,36 @@ import Bubble from './components/Bubble.jsx'
 import QuestionScreen from './components/QuestionScreen.jsx'
 import ResultScreen from './components/ResultScreen.jsx'
 import DebugPanel from './components/DebugPanel.jsx'
+import ProfileMenu from './components/ProfileMenu.jsx'
+import SeenScreen from './components/SeenScreen.jsx'
 import './App.css'
 
 function App() {
   const [phase, setPhase] = useState('start') // start | loading | question | result | error
-  const [game, setGame] = useState(null)
+  const [savedGame, setGame] = useState(null)
   const [current, setCurrent] = useState(null) // { question, ref, text }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   // Screens you can go Back to: [{ phase, game, current }], newest last
   const [history, setHistory] = useState([])
+
+  // Who's playing, and the movies they've already seen
+  const profiles = useProfiles()
+  const { seenIds } = profiles
+  // The seen-movies list sits on top of the game, which stays where it was
+  const [showSeen, setShowSeen] = useState(false)
+  // Switched to Guest, or deleted the profile: close it, so it doesn't pop up
+  // again the next time someone picks a profile
+  if (showSeen && !profiles.active) setShowSeen(false)
+  const view = showSeen && profiles.active ? 'seen' : phase
+
+  // The game as it's played: the profile's seen movies never come up. Applied
+  // here rather than once at the start, so it also covers switching profile
+  // mid-game, going Back, and the seen list loading after a game has started.
+  const game = useMemo(
+    () => savedGame && excludeMovies(savedGame, seenIds),
+    [savedGame, seenIds],
+  )
 
   // Remember the screen you're on before moving away from it
   function remember(screen = { phase, game, current }) {
@@ -39,7 +60,8 @@ function App() {
   }
 
   // Save the new game state, then either ask another question or show the result
-  function advance(nextGame) {
+  function advance(newState) {
+    const nextGame = excludeMovies(newState, seenIds) // so the next question skips them too
     const question = shouldGuess(nextGame) ? null : nextQuestion(nextGame, questions)
     setGame(nextGame)
     setCurrent(question)
@@ -52,6 +74,7 @@ function App() {
 
   function goHome() {
     session.current++
+    setShowSeen(false)
     setPhase('start')
     setGame(null)
     setCurrent(null)
@@ -86,6 +109,12 @@ function App() {
     setBusy(false)
   }
 
+  // "Already seen it": gone from this game, and saved to the profile (if one is picked)
+  function markSeen(movie) {
+    setGame(excludeMovies(game, [movie.id]))
+    profiles.markSeen(movie)
+  }
+
   // Show the best pick so far without answering more questions
   function stopNow() {
     remember()
@@ -106,6 +135,12 @@ function App() {
 
   return (
     <div className="app">
+      {profiles.available && (
+        <header className="topbar">
+          <ProfileMenu profiles={profiles} onOpenSeen={() => setShowSeen(true)} />
+        </header>
+      )}
+
       <main className="game">
         <h1 className="title">
           <button type="button" className="title-button" onClick={goHome} title="Back to start">
@@ -113,59 +148,72 @@ function App() {
           </button>
         </h1>
 
-        {phase === 'start' && (
-          <>
-            <Bubble>
-              Think about what you&apos;re in the mood for. I&apos;ll ask a few questions and
-              pick a movie for you.
-            </Bubble>
-            <button type="button" className="primary-button" onClick={startGame}>
-              Start
-            </button>
-          </>
-        )}
-
-        {phase === 'loading' && <Bubble thinking>Warming up the projector…</Bubble>}
-
-        {phase === 'error' && (
-          <>
-            <Bubble label="Something went wrong">
-              <span className="error-text">{error}</span>
-            </Bubble>
-            <button type="button" className="primary-button" onClick={startGame}>
-              Try again
-            </button>
-          </>
-        )}
-
-        {phase === 'question' && (
-          <QuestionScreen
-            number={game.asked.length + 1}
-            max={game.questionLimit}
-            text={current.text}
-            busy={busy}
-            onAnswer={handleAnswer}
-            canStop={game.asked.length > 0}
-            onStop={stopNow}
-            canGoBack={history.length > 0}
-            onBack={goBack}
+        {view === 'seen' && (
+          <SeenScreen
+            key={profiles.active.name} // a fresh screen (no half-asked "Delete?") per profile
+            profile={profiles.active}
+            onRemove={profiles.unmarkSeen}
+            onDeleteProfile={profiles.removeProfile}
+            onClose={() => setShowSeen(false)}
           />
         )}
 
-        {phase === 'result' && (
-          <ResultScreen
-            game={game}
-            onSeen={(movieId) => setGame(excludeMovie(game, movieId))}
-            onRestart={startGame}
-            canContinue={canKeepGoing(game, questions)}
-            onContinue={continueGame}
-            canGoBack={history.length > 0}
-            onBack={goBack}
-          />
-        )}
+        {/* Hidden, not removed, while the seen list is open, so the game is just as you left it */}
+        <div className="screens" hidden={view === 'seen'}>
+          {phase === 'start' && (
+            <>
+              <Bubble>
+                Think about what you&apos;re in the mood for. I&apos;ll ask a few questions and
+                pick a movie for you.
+              </Bubble>
+              <button type="button" className="primary-button" onClick={startGame}>
+                Start
+              </button>
+            </>
+          )}
+
+          {phase === 'loading' && <Bubble thinking>Warming up the projector…</Bubble>}
+
+          {phase === 'error' && (
+            <>
+              <Bubble label="Something went wrong">
+                <span className="error-text">{error}</span>
+              </Bubble>
+              <button type="button" className="primary-button" onClick={startGame}>
+                Try again
+              </button>
+            </>
+          )}
+
+          {phase === 'question' && (
+            <QuestionScreen
+              number={game.asked.length + 1}
+              max={game.questionLimit}
+              text={current.text}
+              busy={busy}
+              onAnswer={handleAnswer}
+              canStop={game.asked.length > 0}
+              onStop={stopNow}
+              canGoBack={history.length > 0}
+              onBack={goBack}
+            />
+          )}
+
+          {phase === 'result' && (
+            <ResultScreen
+              game={game}
+              onSeen={markSeen}
+              onRestart={startGame}
+              canContinue={canKeepGoing(game, questions)}
+              onContinue={continueGame}
+              canGoBack={history.length > 0}
+              onBack={goBack}
+            />
+          )}
+        </div>
       </main>
 
-      {(phase === 'question' || phase === 'result') && <DebugPanel game={game} />}
+      {(view === 'question' || view === 'result') && <DebugPanel game={game} />}
 
       <footer className="footer">
         This product uses the TMDB API but is not endorsed or certified by TMDB. Movie data and

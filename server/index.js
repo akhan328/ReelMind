@@ -6,12 +6,14 @@
 //   SEERR_URL       e.g. http://seerr:5055 (optional: no "Request it" without it)
 //   SEERR_API_KEY   Seerr -> Settings -> General -> API Key
 //   PORT            default 4173
+//   PROFILES_FILE   where profiles are saved (default: profiles.json in the project folder)
 
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { accessSync, constants, createReadStream, existsSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createApi, settingsFrom } from './api.js'
+import { createProfilesApi } from './profiles.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(root, 'dist')
@@ -76,8 +78,21 @@ const settings = settingsFrom(process.env)
 const api = createApi(settings)
 const port = Number(process.env.PORT) || 4173
 
+const profilesFile = path.resolve(root, process.env.PROFILES_FILE || 'profiles.json')
+const profiles = createProfilesApi(profilesFile)
+
+function canWrite(folder) {
+  try {
+    accessSync(folder, constants.W_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
 http
-  .createServer((req, res) => api(req, res, () => serveStatic(req, res)))
+  // Profiles first: the other /api handler answers "Not found" for any /api path it doesn't know
+  .createServer((req, res) => profiles(req, res, () => api(req, res, () => serveStatic(req, res))))
   .listen(port, () => {
     console.log(`ReelMind is running on http://localhost:${port}`)
     if (!settings.tmdbToken) console.warn('  No TMDB token: set TMDB_TOKEN')
@@ -86,4 +101,8 @@ http
         ? `  Seerr: ${settings.seerrUrl}`
         : '  Seerr: not set up (set SEERR_URL and SEERR_API_KEY for "Request it")',
     )
+    console.log(`  Profiles: ${profilesFile}`)
+    if (!canWrite(path.dirname(profilesFile))) {
+      console.warn(`  Can't save profiles: no write access to ${path.dirname(profilesFile)}`)
+    }
   })

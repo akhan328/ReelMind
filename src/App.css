@@ -1,5 +1,6 @@
 /* Page layout */
 .app {
+  position: relative;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -577,4 +578,375 @@ a.primary-button {
   font-size: 0.8rem;
   text-align: center;
   color: #a99fcc;
+}
+
+/* The game screens: hidden (not removed) while the seen-movies list is open */
+.screens {
+  display: contents;
+}
+
+.screens[hidden] {
+  display: none;
+}
+
+/* Profile switcher, top right */
+.topbar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.profile-menu {
+  position: relative;
+}
+
+.profile-button {
+  max-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.profile-button:hover,
+.profile-button[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+}
+
+.profile-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.profile-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-caret {
+  font-size: 0.75rem;
+  color: #c9bdf0;
+}
+
+.avatar {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 50%;
+  color: var(--text-dark);
+  background: var(--accent);
+}
+
+.avatar.guest {
+  color: var(--text);
+  background: var(--button);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #261850;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.profile-heading {
+  margin: 2px 8px 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c9bdf0;
+}
+
+.profile-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 0 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.profile-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-option[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.profile-option:focus-visible,
+.profile-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.profile-option .avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 0.85rem;
+}
+
+.profile-option-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-option-count {
+  flex: none;
+  font-size: 0.8rem;
+  color: #c9bdf0;
+}
+
+.profile-link {
+  padding: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.profile-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-add {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.profile-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+}
+
+.profile-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.profile-add .small-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-color: transparent;
+}
+
+.profile-error {
+  margin: 0;
+  padding: 0 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: #ffb3c1;
+}
+
+/* An error while the menu is closed, e.g. "Couldn't save that..." */
+.profile-error-floating {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 32px));
+  padding: 8px 12px;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #261850;
+}
+
+/* A profile's seen movies */
+.seen-screen {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.seen-title {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+}
+
+.seen-note {
+  margin: 0;
+  line-height: 1.4;
+  color: #c9bdf0;
+}
+
+.seen-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 150px));
+  justify-content: center; /* a short list sits in the middle, like the rest of the page */
+  gap: 12px;
+  text-align: left;
+}
+
+.seen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.seen-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.seen-link:hover .runner-up-title {
+  color: var(--accent);
+}
+
+.seen-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.seen-remove {
+  align-self: flex-start;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c9bdf0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.seen-remove:hover {
+  color: var(--text);
+  border-color: #ffb3c1;
+}
+
+.seen-remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* "Delete this profile", under the seen movies */
+.profile-delete {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-delete-question {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.danger-link {
+  font-size: 0.9rem;
+  color: #ffb3c1;
+}
+
+.danger-button {
+  color: var(--text-dark);
+  background: #ffb3c1;
+}
+
+.danger-button:hover {
+  border-color: var(--text);
+}
+
+.profile-delete .small-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Narrow screens: the profile button gets its own row so it can't cover the title */
+@media (max-width: 720px) {
+  .topbar {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 16px 0;
+  }
+
+  .game {
+    padding-top: 12px;
+  }
 }

@@ -19,7 +19,8 @@ This is a personal hobby project. It runs on your own computer, or on a home ser
 
 - **Stop and show my pick:** after your first answer, skip straight to a recommendation.
 - **Keep narrowing it down:** from the result screen, answer a few more questions to refine the pick.
-- **Already seen it:** shows the next-best movie instead.
+- **Already seen it:** shows the next-best movie instead. If you're playing as a profile, it's saved, and that movie is never suggested to you again.
+- **Profiles:** the switcher in the top right. Pick who's watching, or add a profile (just a name, no password). Open it to see your seen movies, and **Remove** any you marked by mistake. **Delete this profile** is at the bottom of that page (it asks first). **Guest** saves nothing. See [Profiles](#profiles).
 - **Request it (optional, with Seerr):** after you accept a pick, it checks whether the movie is already on your server. If it is, it links to it in Jellyfin. If not, **Request it** sends it to Seerr, which has Radarr download it.
 - **Behind the scenes:** a panel under the game showing the current top 5, your taste profile and any filters. Handy for testing.
 - Click **ReelMind** at the top to go back to the start.
@@ -82,7 +83,7 @@ Requests use Seerr's API key, so they count as your Seerr admin account and are 
 
 ## Running it on a home server (Docker)
 
-The `Dockerfile` builds the app and runs its server on port 4173. It keeps nothing on disk, so it needs no volume.
+The `Dockerfile` builds the app and runs its server on port 4173. The only thing it saves is `profiles.json`, in `/app/data` inside the container. Mount a folder there, or the profiles are lost every time the container is rebuilt.
 
 1. Clone this repo onto the server:
    ```
@@ -98,6 +99,8 @@ The `Dockerfile` builds the app and runs its server on port 4173. It keeps nothi
        - TMDB_TOKEN=your-tmdb-token
        - SEERR_URL=http://seerr:5055 # Seerr's container name and port
        - SEERR_API_KEY=your-seerr-api-key
+     volumes:
+       - /path/to/reelmind-data:/app/data # profiles.json is saved here
      ports:
        - 4173:4173
      networks:
@@ -110,7 +113,12 @@ The `Dockerfile` builds the app and runs its server on port 4173. It keeps nothi
        retries: 3
      restart: unless-stopped
    ```
-3. Run `docker compose up -d --build reelmind`, then open `http://<server-ip>:4173` from any device on your network.
+3. Create the data folder, and let the container write to it. It runs as user 1000, Node's default user:
+   ```
+   mkdir -p /path/to/reelmind-data
+   sudo chown 1000:1000 /path/to/reelmind-data
+   ```
+4. Run `docker compose up -d --build reelmind`, then open `http://<server-ip>:4173` from any device on your network. The startup log (`docker logs reelmind`) shows where profiles are saved, and warns if it can't write there.
 
 To update later: `git pull` in the repo folder, then `docker compose up -d --build reelmind` again.
 
@@ -127,6 +135,8 @@ Without Docker: `npm install`, `npm run build`, then `npm start`. It reads `.env
 | "Seerr rejected the API key" | Copy the key again from Seerr's **Settings → General**. Regenerating it there makes the old one stop working. |
 | "Seerr said: …" | Seerr refused the request (for example, the movie is on its blocklist). Seerr's logs have the details. |
 | **Watch in Jellyfin** opens the wrong address | Set **External URL** in Seerr's **Settings → Jellyfin**. |
+| "Couldn't read or save profiles.json", or the log says `Can't save profiles` | In Docker, the folder mounted at `/app/data` must be writable by user 1000: `sudo chown 1000:1000 /path/to/reelmind-data`. |
+| "profiles.json isn't valid JSON" | Someone hand-edited it and broke it. Fix the file, or delete it to start over. |
 
 ## Scripts
 
@@ -138,21 +148,50 @@ Without Docker: `npm install`, `npm run build`, then `npm start`. It reads `.env
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Check the code with oxlint |
 
+## Profiles
+
+Profiles are saved in `profiles.json` in the project folder. The app creates it when you add the first profile. It's in `.gitignore`, so your lists stay off GitHub.
+
+```json
+{
+  "profiles": [
+    {
+      "name": "Anan",
+      "created": "2026-11-17T21:30:00.000Z",
+      "seen": [
+        { "id": 603, "title": "The Matrix", "year": 1999, "poster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg", "seenAt": "2026-11-17T21:42:10.000Z" }
+      ]
+    }
+  ]
+}
+```
+
+- `id` is the TMDB movie id. It's the only field the app needs to skip a movie. The others are for the seen-movies screen.
+- You can edit the file by hand, for example to rename a profile. Do it while the app isn't running. If the file stops being valid JSON, the app says so and doesn't overwrite it.
+- ReelMind's own server saves the file, so profiles work with `npm run dev`, `npm run preview` and `npm start`. A plain static copy of `dist/` has no profile switcher.
+- `npm start` can save it somewhere else: set `PROFILES_FILE`. In Docker it's `/app/data/profiles.json` (see [Running it on a home server](#running-it-on-a-home-server-docker)).
+- Everyone who opens ReelMind sees the same profiles, so on a home server each person picks theirs once per device.
+- The browser remembers which profile you played as last.
+
 ## Project layout
 
 ```
 src/
   App.jsx               screens and game state
   gameFlow.js           runs one turn: apply the answer, pull more movies, load details
+  useProfiles.js        who's playing, and their seen movies
   api/tmdb.js           all TMDB calls, request limiting, and the browser cache for details
   api/seerr.js          Seerr: is the movie on your server, and "Request it"
+  api/profiles.js       reading and saving profiles
   engine/engine.js      the algorithm: scoring, picking questions, when to guess
   engine/traits.js      turns TMDB data into traits (genre, era, perception, themes...)
   data/questions.json   every question
   data/themes.json      themes and the TMDB keyword ids behind them
-  components/           question screen, result screen, Seerr panel, behind-the-scenes panel
+  components/           question screen, result screen, Seerr panel, profile switcher, seen movies,
+                        behind-the-scenes panel
 server/
   api.js                the /api routes: TMDB and Seerr, with the keys added server-side
+  profiles.js           the /api/profiles routes: reads and writes profiles.json
   index.js              production server: the built app + the /api routes
 ```
 

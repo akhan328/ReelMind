@@ -7,3 +7,4 @@ dist
 .env*
 *.local
 pitch-and-features.txt
+profiles.json*
