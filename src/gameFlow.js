@@ -6,7 +6,6 @@ import {
   fetchMoreMovies,
   fetchRecommendations,
   fetchStartingPool,
-  knownDetails,
   prefetchDetails,
 } from './api/tmdb.js'
 import {
@@ -64,20 +63,10 @@ export async function answerQuestion(game, current, answerValue) {
   return next
 }
 
-// Every movie gets the details that are already here (preloaded in the
-// background, or saved from earlier games): they cost nothing, and without
-// them a movie's themes count as "no", so a heist movie ranked just outside
-// the top could never climb after "Do you want a heist? Yes".
-function attachKnownDetails(game) {
-  const ids = game.pool.filter((movie) => !movie.details).map((movie) => movie.id)
-  const known = knownDetails(ids)
-  return Object.keys(known).length > 0 ? attachDetails(game, known) : game
-}
-
 // Makes sure the top contenders have keywords, runtime and age rating loaded.
-// Fetching runs twice because loading details can reshuffle the top of the ranking.
+// Runs twice because loading details can reshuffle the top of the ranking.
 async function loadTopDetails(game) {
-  let next = attachKnownDetails(game)
+  let next = game
   for (let round = 0; round < 2; round++) {
     const ids = missingDetails(next, DETAILS_FOR_TOP)
     if (ids.length === 0) break

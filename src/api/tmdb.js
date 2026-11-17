@@ -267,10 +267,3 @@ export async function fetchDetails(ids, { urgent = true } = {}) {
 export function prefetchDetails(ids) {
   fetchDetails(ids, { urgent: false }).catch(() => {})
 }
-
-// Details that are already here (loaded earlier, or saved in the browser),
-// without sending any requests. Returns { [movieId]: details }
-export function knownDetails(ids) {
-  const saved = loadSavedDetails()
-  return Object.fromEntries(ids.filter((id) => saved[id]).map((id) => [id, saved[id].details]))
-}

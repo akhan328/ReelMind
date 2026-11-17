@@ -40,6 +40,7 @@ const FRESH_WINDOW = 2
 const CLOSE_ENOUGH = 0.2 // pick randomly among questions this close to the best
 const DONT_KNOW_PENALTY = 0.35 // per extra "Don't know" to one kind of question (era, length...)
 const SIMILAR_WEIGHT = 0.6 // "like [movie]": weight per genre that movie has
+const SIMILAR_THEME_WEIGHT = 0.5 // ...and per theme it has (smaller: themes are narrower)
 const RECOMMENDED_BOOST = 1 // "like [movie]": bonus for TMDB's recommendations
 const REFERENCE_PENALTY = 1 // "like [movie]": the [movie] itself drops a bit, so similar movies rank above it
 const MIN_REF_VOTES = 2000 // [movie] has to be well known enough to recognize
@@ -132,16 +133,41 @@ function entropy(p) {
 // ---------------------------------------------------------------------------
 // Choosing questions
 
-function genreOverlap(a, b) {
-  const union = new Set([...a.genre_ids, ...b.genre_ids])
-  if (union.size === 0) return 0
-  const shared = a.genre_ids.filter((id) => b.genre_ids.includes(id)).length
-  return shared / union.size
+// What "like [movie]" means: that movie's genres, and its themes at a smaller weight
+function likeWeight(trait) {
+  if (trait.startsWith('genre:')) return SIMILAR_WEIGHT
+  if (trait.startsWith('theme:')) return SIMILAR_THEME_WEIGHT
+  return 0
+}
+
+// The genres and themes a movie has, with their weights. Themes come from the
+// details call, which the [movie] has: it's picked from the top 15.
+function likeTraits(movie) {
+  return Object.fromEntries(
+    Object.entries(movie.traits)
+      .filter(([trait, value]) => value >= 0.5 && likeWeight(trait) > 0)
+      .map(([trait]) => [trait, likeWeight(trait)]),
+  )
+}
+
+// Share of their genres and themes two movies have in common, by weight:
+// 1 for the same ones, 0 for none
+function similarity(a, b) {
+  const traitsA = likeTraits(a)
+  const traitsB = likeTraits(b)
+  let shared = 0
+  let union = 0
+  for (const trait of new Set([...Object.keys(traitsA), ...Object.keys(traitsB)])) {
+    const weight = likeWeight(trait) / SIMILAR_WEIGHT // a genre counts 1
+    union += weight
+    if (traitsA[trait] && traitsB[trait]) shared += weight
+  }
+  return union === 0 ? 0 : shared / union
 }
 
 // How well a movie fits a question: 0 (not at all) to 1 (fully)
 export function questionMatch(question, movie, ref) {
-  if (question.fill === 'movie') return genreOverlap(movie, ref)
+  if (question.fill === 'movie') return similarity(movie, ref)
   let total = 0
   let weightSum = 0
   for (const [trait, weight] of Object.entries(question.traits)) {
@@ -345,10 +371,6 @@ export function applyHardFilter(game, question, answerValue) {
 }
 
 function applyLikeMovie(game, ref, answerValue, recommendations) {
-  const genreTraits = Object.fromEntries(
-    ref.genre_ids.map((id) => [`genre:${id}`, SIMILAR_WEIGHT]),
-  )
-
   const boosts = { ...game.boosts }
   for (const movie of recommendations) {
     const before = boosts[movie.id]?.amount ?? 0
@@ -366,7 +388,7 @@ function applyLikeMovie(game, ref, answerValue, recommendations) {
   const withRecs = answerValue > 0 ? addMovies(game, recommendations) : game
   return {
     ...withRecs,
-    profile: addToProfile(game.profile, genreTraits, answerValue),
+    profile: addToProfile(game.profile, likeTraits(ref), answerValue),
     boosts,
   }
 }
