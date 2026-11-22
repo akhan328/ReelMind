@@ -26,7 +26,7 @@ Seerr is optional either way. Without it, everything works except **Request it**
 - **Keep narrowing it down:** from the result screen, answer a few more questions to refine the pick.
 - **Already seen it:** shows the next-best movie instead. If you're playing as a profile, it's saved, and that movie is never suggested to you again.
 - **Profiles:** the switcher in the top right. Pick who's watching, or add a profile (just a name, no password). Open it to see your seen movies, and **Remove** any you marked by mistake. **Delete this profile** is at the bottom of that page (it asks first). **Guest** saves nothing. See [Profiles](#profiles).
-- **Request it (only with Seerr):** after you accept a pick, it checks whether the movie is already on your server. If it is, it links to it in Jellyfin. If not, **Request it** sends it to Seerr, which has Radarr download it.
+- **Request it (only with Seerr):** after you accept a pick, it checks whether the movie is already on your server. If it is, it links to it in Jellyfin. If not, **Request it** sends it to Seerr, which has Radarr download it. If you're playing as a profile, the movie also goes on your list, tagged **Requested**, so it isn't suggested to you again.
 - **Behind the scenes:** a panel under the game showing the current top 5, your taste profile and any filters. Handy for testing.
 - Click **ReelMind** at the top to go back to the start.
 
@@ -151,7 +151,7 @@ Put them in the compose file's `environment:` (Option B) or in `.env.local` (Opt
 **What it shows** after **Sounds good!** or **This one!**:
 - **Watch in Jellyfin** if the movie is already on the server.
 - That it's downloading, or waiting for approval, if it's already been requested.
-- **Request it** if it isn't there yet.
+- **Request it** if it isn't there yet. If you're playing as a profile, the movie goes on your list once the request goes through, tagged **Requested**, and isn't suggested to you again. As **Guest**, nothing is saved.
 
 Requests use Seerr's API key, so they count as your Seerr admin account and are approved right away. Seerr sends them to its default Radarr server with its default quality profile and root folder. Requests made while testing from your own computer are real requests too.
 
@@ -170,7 +170,8 @@ Profiles are saved in `profiles.json`. The app creates it when you add the first
       "name": "Anan",
       "created": "2026-11-17T21:30:00.000Z",
       "seen": [
-        { "id": 603, "title": "The Matrix", "year": 1999, "poster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg", "seenAt": "2026-11-17T21:42:10.000Z" }
+        { "id": 603, "title": "The Matrix", "year": 1999, "poster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg", "seenAt": "2026-11-17T21:42:10.000Z" },
+        { "id": 129, "title": "Spirited Away", "year": 2001, "poster": "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", "requested": true, "seenAt": "2026-11-21T20:05:31.000Z" }
       ]
     }
   ]
@@ -178,6 +179,7 @@ Profiles are saved in `profiles.json`. The app creates it when you add the first
 ```
 
 - `id` is the TMDB movie id. It's the only field the app needs to skip a movie. The others are for the seen-movies screen.
+- `"requested": true` means the movie was requested in Seerr rather than marked **Already seen it**. Either way, it isn't suggested again.
 - You can edit the file by hand, for example to rename a profile. Do it while the app isn't running. If the file stops being valid JSON, the app says so and doesn't overwrite it.
 - ReelMind's own server saves the file, so profiles work with `npm run dev`, `npm run preview`, `npm start` and Docker. A plain static copy of `dist/` has no profile switcher.
 - Everyone who opens ReelMind sees the same profiles, so on a home server each person picks theirs once per device. The browser remembers which profile it played as last.

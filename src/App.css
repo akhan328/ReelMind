@@ -878,6 +878,17 @@ a.primary-button {
   outline-offset: 2px;
 }
 
+/* "Requested": asked for in Seerr rather than marked "Already seen it" */
+.seen-tag {
+  align-self: flex-start;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 999px;
+  color: var(--text-dark);
+  background: var(--accent);
+}
+
 .seen-remove {
   align-self: flex-start;
   padding: 4px 12px;

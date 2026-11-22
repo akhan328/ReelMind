@@ -7,7 +7,8 @@
 //   POST   /api/profiles                      { name }: add a profile
 //   GET    /api/profiles/:name                one profile: { name, seen: [movie, ...] }
 //   DELETE /api/profiles/:name                delete a profile and its seen movies
-//   POST   /api/profiles/:name/seen           { id, title, year, poster }: "Already seen it"
+//   POST   /api/profiles/:name/seen           { id, title, year, poster, requested? }: "Already
+//                                             seen it", or requested in Seerr (requested: true)
 //   DELETE /api/profiles/:name/seen/:movieId  take a movie off the list again
 //
 // Runs inside the dev server (see vite.config.js), not in the browser.
@@ -68,7 +69,9 @@ function cleanMovie(body) {
   const year = Number.isInteger(body.year) && body.year > 1800 && body.year < 3000 ? body.year : null
   // A TMDB image path, e.g. "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
   const poster = typeof body.poster === 'string' && /^\/[\w.-]{1,100}$/.test(body.poster) ? body.poster : null
-  return { id, title, year, poster, seenAt: new Date().toISOString() }
+  // Requested in Seerr rather than marked "Already seen it"
+  const requested = body.requested === true ? { requested: true } : {}
+  return { id, title, year, poster, ...requested, seenAt: new Date().toISOString() }
 }
 
 function sameName(a, b) {

@@ -132,20 +132,24 @@ export function useProfiles() {
     }
   }
 
-  // "Already seen it": saved to the current profile. Does nothing for Guest.
-  async function markSeen(movie) {
-    if (!active) return
+  // "Already seen it", or `requested` in Seerr: saved to the current profile,
+  // so it's never suggested again. Resolves to the profile's name if it was
+  // saved, or null (Guest, or saving failed).
+  async function markSeen(movie, { requested = false } = {}) {
+    if (!active) return null
     try {
-      received(
-        await addSeen(active.name, {
-          id: movie.id,
-          title: movie.title,
-          year: releaseYear(movie),
-          poster: movie.poster_path ?? null,
-        }),
-      )
+      const profile = await addSeen(active.name, {
+        id: movie.id,
+        title: movie.title,
+        year: releaseYear(movie),
+        poster: movie.poster_path ?? null,
+        ...(requested && { requested: true }),
+      })
+      received(profile)
+      return profile.name
     } catch (err) {
       setError(`Couldn't save that to ${active.name}'s profile. ${err.message}`)
+      return null
     }
   }
 

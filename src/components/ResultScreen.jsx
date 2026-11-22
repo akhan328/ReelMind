@@ -9,6 +9,7 @@ import SeerrPanel from './SeerrPanel.jsx'
 export default function ResultScreen({
   game,
   onSeen,
+  onRequested,
   onRestart,
   canContinue,
   onContinue,
@@ -28,7 +29,7 @@ export default function ResultScreen({
     return (
       <section className="result">
         <p className="enjoy">Enjoy {chosen.title}! 🍿</p>
-        <SeerrPanel movie={chosen} />
+        <SeerrPanel movie={chosen} onRequested={onRequested} />
         <button type="button" className="answer-button wide-button" onClick={onRestart}>
           Play again
         </button>

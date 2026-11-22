@@ -203,6 +203,7 @@ function App() {
             <ResultScreen
               game={game}
               onSeen={markSeen}
+              onRequested={(movie) => profiles.markSeen(movie, { requested: true })}
               onRestart={startGame}
               canContinue={canKeepGoing(game, questions)}
               onContinue={continueGame}

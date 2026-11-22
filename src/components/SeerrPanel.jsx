@@ -10,10 +10,13 @@ const MESSAGES = {
 
 // Under "Enjoy [movie]!": is it on your server? If not, "Request it" sends it to
 // Seerr, which has Radarr download it. Shows nothing if Seerr isn't set up.
-export default function SeerrPanel({ movie }) {
+// onRequested(movie): after a request goes through. Resolves to the profile's
+// name if the movie was saved to one (so it isn't suggested again), else null.
+export default function SeerrPanel({ movie, onRequested }) {
   const [info, setInfo] = useState(null) // { enabled, status, watchUrl }, null while checking
   const [requesting, setRequesting] = useState(false)
   const [error, setError] = useState('')
+  const [savedTo, setSavedTo] = useState(null) // profile the request was saved to
 
   useEffect(() => {
     let current = true
@@ -31,6 +34,7 @@ export default function SeerrPanel({ movie }) {
     try {
       const result = await requestMovie(movie.id)
       setInfo((before) => ({ ...before, status: result.status }))
+      if (onRequested) setSavedTo(await onRequested(movie))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -54,6 +58,12 @@ export default function SeerrPanel({ movie }) {
       )}
 
       {MESSAGES[info?.status] && <p className="seerr-note">{MESSAGES[info.status]}</p>}
+
+      {savedTo && (
+        <p className="seerr-note">
+          Added to {savedTo}&apos;s movies, so it won&apos;t be suggested again.
+        </p>
+      )}
 
       {info?.status === 'available' && info.watchUrl && (
         <a className="primary-button" href={info.watchUrl} target="_blank" rel="noreferrer">

@@ -27,7 +27,7 @@ export default function SeenScreen({ profile, onRemove, onDeleteProfile, onClose
         <h2 className="seen-title">{profile.name}&apos;s seen movies</h2>
         <p className="seen-note">
           {seen.length === 0
-            ? 'Nothing here yet. Press "Already seen it" on a pick and it will show up here.'
+            ? 'Nothing here yet. Movies you mark "Already seen it", or request, show up here.'
             : `ReelMind won't suggest ${seen.length === 1 ? 'this one' : `these ${seen.length}`} to ${profile.name} again.`}
         </p>
       </div>
@@ -53,6 +53,7 @@ export default function SeenScreen({ profile, onRemove, onDeleteProfile, onClose
                     {movie.title}
                     {movie.year && <span className="runner-up-year"> ({movie.year})</span>}
                   </span>
+                  {movie.requested && <span className="seen-tag">Requested</span>}
                 </a>
                 <button
                   type="button"
