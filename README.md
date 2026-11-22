@@ -11,6 +11,8 @@ This is a personal hobby project. You can run it two ways:
 
 Seerr is optional either way. Without it, everything works except **Request it**, which just doesn't appear.
 
+![ReelMind's pick: Batman Begins, with why it was picked, the buttons to accept it or keep going, and three runner-ups](docs/screenshots/result.png)
+
 ## How it works
 
 1. **Start:** it pulls about 200 movies from TMDB, a mix of well-known movies, popular-right-now movies and hidden gems. The mix is random, so every game is different.
@@ -19,6 +21,10 @@ Seerr is optional either way. Without it, everything works except **Request it**
 4. **Choosing the next question:** it asks whatever best splits the movies at the top of the ranking. Questions go from broad ("animated?") to narrow ("found-footage horror?"). Narrow follow-ups only come up after a Yes to their parent question, so "zombies?" only gets asked after "Do you want to be scared?".
 5. **Pulling more movies:** a Yes to something specific (a genre, theme, decade or language) pulls more matching movies from TMDB. For the top contenders it also loads keywords, runtime and age rating.
 6. **The pick:** usually after 7 to 15 questions, it shows its pick with the poster, rating, runtime, a summary, why it was picked, and a few runner-ups.
+
+A question, with the **Behind the scenes** panel open: the current top 5, the taste profile built from the answers so far, and a hard filter from a plain "No" to a foreign-language question.
+
+![Question 6: "Do you want to watch a movie like Aladdin (1992)?" with the five answer buttons, and the Behind the scenes panel showing the top 5, the taste profile and a hard filter](docs/screenshots/question.png)
 
 ## Features
 
@@ -68,7 +74,9 @@ You need [Node.js](https://nodejs.org/) 20.19+ or 22.12+. The LTS version from n
    npm install
    npm run dev
    ```
-4. Open http://localhost:5173.
+4. Open http://localhost:5173. You should see this, with the profile switcher in the top right:
+
+   ![ReelMind's start screen: the ReelMind title, the mascot, "Think about what you're in the mood for", a Start button, and the Guest profile switcher in the corner](docs/screenshots/start.png)
 
 To stop it, press Ctrl+C in the terminal. If you change `.env.local`, restart `npm run dev`. Profiles are saved in `profiles.json` in the project folder.
 
