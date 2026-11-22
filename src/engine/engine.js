@@ -68,7 +68,8 @@ export function newGame(movies) {
     trendingCutoff, // popularity needed for "trending now", fixed for the whole game
     profile: {}, // trait -> weight
     hardFilters: [], // [{ trait, wanted }]
-    excludedIds: [], // "Already seen it": this game's, plus the profile's saved ones
+    excludedIds: [], // marked "Already seen it" during this game
+    profileSeenIds: [], // the current profile's saved ones (replaced when the profile changes)
     boosts: {}, // movieId -> { amount, because }
     asked: [], // [{ id, text, ref, answer }]
     askCounts: {}, // questionId -> times asked
@@ -82,7 +83,7 @@ export function newGame(movies) {
 // Scoring
 
 export function candidates(game) {
-  const excluded = new Set(game.excludedIds)
+  const excluded = new Set([...game.excludedIds, ...(game.profileSeenIds ?? [])])
   return game.pool.filter(
     (movie) =>
       !excluded.has(movie.id) &&

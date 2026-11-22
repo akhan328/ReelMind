@@ -36,11 +36,12 @@ function App() {
   if (showSeen && !profiles.active) setShowSeen(false)
   const view = showSeen && profiles.active ? 'seen' : phase
 
-  // The game as it's played: the profile's seen movies never come up. Applied
-  // here rather than once at the start, so it also covers switching profile
-  // mid-game, going Back, and the seen list loading after a game has started.
+  // The game as it's played: the current profile's seen movies never come up.
+  // Set here, replacing any earlier list, rather than once at the start: so
+  // switching profile mid-game swaps in the new profile's list, Remove on the
+  // seen page puts a movie back at once, and the list can load after a game starts.
   const game = useMemo(
-    () => savedGame && excludeMovies(savedGame, seenIds),
+    () => savedGame && { ...savedGame, profileSeenIds: seenIds },
     [savedGame, seenIds],
   )
 
@@ -61,7 +62,7 @@ function App() {
 
   // Save the new game state, then either ask another question or show the result
   function advance(newState) {
-    const nextGame = excludeMovies(newState, seenIds) // so the next question skips them too
+    const nextGame = { ...newState, profileSeenIds: seenIds } // so the next question skips them too
     const question = shouldGuess(nextGame) ? null : nextQuestion(nextGame, questions)
     setGame(nextGame)
     setCurrent(question)

@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 
+// First character of a name for its avatar. Array.from keeps an emoji whole
+// ("😀 Sam"[0] would be half of one, which shows as a broken character).
+function initial(name) {
+  return (Array.from(name)[0] ?? '?').toUpperCase()
+}
+
 // Top-right profile switcher: pick who's playing, add a profile, or open
 // your seen movies. `profiles` is what useProfiles() returns.
 export default function ProfileMenu({ profiles, onOpenSeen }) {
@@ -71,7 +77,7 @@ export default function ProfileMenu({ profiles, onOpenSeen }) {
         title="Switch profile"
       >
         <span className={active ? 'avatar' : 'avatar guest'} aria-hidden="true">
-          {active ? active.name[0].toUpperCase() : '?'}
+          {active ? initial(active.name) : '?'}
         </span>
         <span className="profile-name">{active ? active.name : 'Guest'}</span>
         <span className="profile-caret" aria-hidden="true">
@@ -93,7 +99,7 @@ export default function ProfileMenu({ profiles, onOpenSeen }) {
                   onClick={() => pick(p.name)}
                 >
                   <span className="avatar" aria-hidden="true">
-                    {p.name[0].toUpperCase()}
+                    {initial(p.name)}
                   </span>
                   <span className="profile-option-name">{p.name}</span>
                   <span className="profile-option-count">{p.seenCount} seen</span>
