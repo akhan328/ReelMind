@@ -4,7 +4,7 @@ A guessing-game-style movie picker. It asks you a series of quick questions, the
 
 There's no AI here. The questions are prewritten, and a hand-coded scoring algorithm picks the movie. Movie data is pulled live from [TMDB](https://www.themoviedb.org/). Movies only, no TV shows.
 
-This is a personal hobby project. You can run it two ways:
+This is a personal hobby project, open source under the [MIT license](#license). You can run it two ways:
 
 - **On your own computer.** All you need is Node.js and a free TMDB account.
 - **On a home server, next to [Seerr](https://github.com/seerr-team/seerr).** Anyone on your network can play. **Request it** sends the movie it picks to Seerr, which downloads it into Jellyfin.
@@ -242,6 +242,12 @@ server/
 ```
 
 The settings that control the algorithm (question limits, how picky it is, and so on) are at the top of `src/engine/engine.js`.
+
+## License
+
+ReelMind is open source under the [MIT license](LICENSE). You can use, change, share or build on the code however you like, including in your own projects. Just keep the copyright and license notice in any copy.
+
+The license covers ReelMind's code. Movie data and posters, including the ones in the screenshots, come from TMDB and belong to their owners.
 
 ## Credits
 
